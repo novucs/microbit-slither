@@ -8,7 +8,7 @@
 android {  
   defaultConfig {  
     generatedDensities = []
-    applicationId = "org.nativescript.controller"  
+    applicationId = "net.novucs.microbit.display"
   }  
   aaptOptions {  
     additionalParameters "--no-version-vectors"  
