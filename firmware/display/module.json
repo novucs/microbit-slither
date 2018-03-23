@@ -1,0 +1,11 @@
+{
+  "name": "microbit-display",
+  "version": "1.0.0",
+  "description": "Displays the micro:bit movements on a phone app via bluetooth",
+  "license": "MIT",
+  "dependencies": {
+    "microbit": "lancaster-university/microbit"
+  },
+  "targetDependencies": {},
+  "bin": "./source"
+}
