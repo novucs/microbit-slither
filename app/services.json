@@ -145,17 +145,17 @@
     ]
   },
   {
-    "UUID": "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+    "UUID": "e95d0753-251d-470a-a062-fa1922dfa9a8",
     "characteristics": [
       {
-        "UUID": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
-        "name": "6e400002-b5a3-f393-e0a9-e50e24dcca9e",
+        "UUID": "e95dca4b-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95dca4b-251d-470a-a062-fa1922dfa9a8",
         "properties": {
-          "read": false,
+          "read": true,
           "write": false,
           "writeWithoutResponse": false,
-          "notify": false,
-          "indicate": true,
+          "notify": true,
+          "indicate": false,
           "broadcast": false,
           "authenticatedSignedWrites": false,
           "extendedProperties": false
@@ -168,12 +168,217 @@
         ]
       },
       {
-        "UUID": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
-        "name": "6e400003-b5a3-f393-e0a9-e50e24dcca9e",
+        "UUID": "e95dfb24-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95dfb24-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": true,
+          "writeWithoutResponse": false,
+          "notify": false,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": []
+      }
+    ]
+  },
+  {
+    "UUID": "e95d9882-251d-470a-a062-fa1922dfa9a8",
+    "characteristics": [
+      {
+        "UUID": "e95dda90-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95dda90-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": false,
+          "writeWithoutResponse": false,
+          "notify": true,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": [
+          {
+            "UUID": "2902",
+            "value": null
+          }
+        ]
+      },
+      {
+        "UUID": "e95dda91-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95dda91-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": false,
+          "writeWithoutResponse": false,
+          "notify": true,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": [
+          {
+            "UUID": "2902",
+            "value": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "UUID": "e95d127b-251d-470a-a062-fa1922dfa9a8",
+    "characteristics": [
+      {
+        "UUID": "e95d5899-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95d5899-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": true,
+          "writeWithoutResponse": false,
+          "notify": false,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": []
+      },
+      {
+        "UUID": "e95db9fe-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95db9fe-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": true,
+          "writeWithoutResponse": false,
+          "notify:": false,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": []
+      },
+      {
+        "UUID": "e95dd822-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95dd822-251d-470a-a062-fa1922dfa9a8",
         "properties": {
           "read": false,
           "write": true,
-          "writeWithoutResponse": true,
+          "writeWithoutResponse": false,
+          "notify": false,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": []
+      },
+      {
+        "UUID": "e95d8d00-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95d8d00-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": true,
+          "writeWithoutResponse": false,
+          "notify": true,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": [
+          {
+            "UUID": "2902",
+            "value": null
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "UUID": "e95dd91d-251d-470a-a062-fa1922dfa9a8",
+    "characteristics": [
+      {
+        "UUID": "e95d7b77-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95d7b77-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": true,
+          "writeWithoutResponse": false,
+          "notify": false,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": []
+      },
+      {
+        "UUID": "e95d93ee-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95d93ee-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": false,
+          "write": true,
+          "writeWithoutResponse": false,
+          "notify": false,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": []
+      },
+      {
+        "UUID": "e95d0d2d-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95d0d2d-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": true,
+          "writeWithoutResponse": false,
+          "notify": false,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": []
+      }
+    ]
+  },
+  {
+    "UUID": "e95d6100-251d-470a-a062-fa1922dfa9a8",
+    "characteristics": [
+      {
+        "UUID": "e95d9250-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95d9250-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": false,
+          "writeWithoutResponse": false,
+          "notify": true,
+          "indicate": false,
+          "broadcast": false,
+          "authenticatedSignedWrites": false,
+          "extendedProperties": false
+        },
+        "descriptors": [
+          {
+            "UUID": "2902",
+            "value": null
+          }
+        ]
+      },
+      {
+        "UUID": "e95d1b25-251d-470a-a062-fa1922dfa9a8",
+        "name": "e95d1b25-251d-470a-a062-fa1922dfa9a8",
+        "properties": {
+          "read": true,
+          "write": true,
+          "writeWithoutResponse": false,
           "notify": false,
           "indicate": false,
           "broadcast": false,

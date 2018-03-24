@@ -64,9 +64,7 @@ int main() {
     new MicroBitButtonService(*uBit.ble);
     new MicroBitIOPinService(*uBit.ble, uBit.io);
     new MicroBitLEDService(*uBit.ble, uBit.display);
-    new MicroBitMagnetometerService(*uBit.ble, uBit.compass);
     new MicroBitTemperatureService(*uBit.ble, uBit.thermometer);
-
 
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500

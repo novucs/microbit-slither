@@ -2,28 +2,38 @@ import {AfterViewInit, Component, ElementRef, OnInit, Renderer2, ViewChild} from
 
 import {Item} from "./item";
 import {ItemService} from "./item.service";
-
-import {
-    Characteristic,
-    connect,
-    Peripheral,
-    ReadResult,
-    Service,
-    startNotifying,
-    startScanning
-} from "nativescript-bluetooth";
 import {TextDecoder} from "text-encoding";
-import * as app from "tns-core-modules/application";
-import * as platform from "tns-core-modules/platform";
 import {Image} from "tns-core-modules/ui/image";
-import ImageView = org.nativescript.widgets.ImageView;
-import {Button} from "tns-core-modules/ui/button";
-
+import {Peripheral, ReadResult} from "nativescript-bluetooth";
+import bluetooth = require("nativescript-bluetooth");
 
 const SCAN_DURATION_SECONDS: number = 4;
 const UART_SERVICE_ID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const UART_RX_CHARACTERISTIC_ID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
 const UART_TX_CHARACTERISTIC_ID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+const ACCELEROMETER_SERVICE_ID = "e95d0753-251d-470a-a062-fa1922dfa9a8";
+const ACCELEROMETER_DATA_CHARACTERISTIC_ID = "e95dca4b-251d-470a-a062-fa1922dfa9a8";
+const ACCELEROMETER_PERIOD_CHARACTERISTIC_ID = "e95dfb24-251d-470a-a062-fa1922dfa9a8";
+
+/**
+ * Performs a low pass filter.
+ * https://en.wikipedia.org/wiki/Low-pass_filter
+ *
+ * @param {number[]} a the new signal.
+ * @param {number[]} b the old signal.
+ * @returns {number[]} the filtered response.
+ */
+export function lowPass(a: number[], b: number[]): number[] {
+    if (b == null) {
+        return a;
+    }
+
+    for (let i = 0; i < a.length; i++) {
+        b[i] += 0.1 * (a[i] - b[i]);
+    }
+
+    return b;
+}
 
 @Component({
     selector: "ns-items",
@@ -31,12 +41,15 @@ const UART_TX_CHARACTERISTIC_ID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
     templateUrl: "./items.component.html",
 })
 export class ItemsComponent implements OnInit, AfterViewInit {
-    @ViewChild("foo") microbitImage: ElementRef;
-    @ViewChild("bar") bar: ElementRef;
+    @ViewChild("player1") player1Image: ElementRef;
+    @ViewChild("player2") player2Image: ElementRef;
     items: Item[];
     scanning: boolean = false;
+    scanningText: string = "Scanning";
+    multiplayer: boolean = false;
     devicesFound: number = 0;
     connectingIds: Set<string> = new Set();
+    previousAccelerometer: number[] = null;
 
     // This pattern makes use of Angular’s dependency injection implementation to inject an instance of the ItemService service into this class. 
     // Angular knows about this service because it is included in your app’s main NgModule, defined in app.module.ts.
@@ -49,18 +62,8 @@ export class ItemsComponent implements OnInit, AfterViewInit {
         this.items = this.itemService.getItems();
 
         setTimeout(() => {
-            const thing: Image = this.microbitImage.nativeElement;
-            console.log(thing);
-            console.log(thing.android);
-            console.log(thing.ios);
-            console.log(thing.imageSource);
-            console.log(thing.src);
-            console.log(thing.stretch);
-
-            const image: android.widget.ImageView = thing.android;
-            image.setRotationX(3.0);
-            image.setRotationY(3.0);
-        }, 2000);
+            this.scan();
+        }, 1000);
     }
 
     ngAfterViewInit() {
@@ -70,34 +73,30 @@ export class ItemsComponent implements OnInit, AfterViewInit {
         // this.rd.appendChild(this.el.nativeElement, image);
     }
 
+    public playGame() {
+        alert("Game play is unsupported!");
+    }
+
+    public toggleMode() {
+        this.multiplayer = !this.multiplayer;
+    }
+
     public scan(): void {
-//         const javaLangPkg = java.lang;
-//         const androidPkg = android;
-//         const androidViewPkg = android.view;
-//
-// // access classes from inside the packages later on
-//
-//         const View = androidViewPkg.View;
-//         const image: android.widget.Button = android.app;
-//         image.setRotationX(10);
-//         image.setRotationY(10);
-//
-//
-//         const Object = javaLangPkg.Object; // === java.lang.Object;
-
-
         if (this.scanning) {
             console.log("You are already scanning!");
             return;
         }
 
-        for (let i = 0; i < SCAN_DURATION_SECONDS; i++) {
+        this.scanning = true;
+        this.scanningText = "Scanning (" + SCAN_DURATION_SECONDS + " seconds remain)";
+
+        for (let i = 1; i < SCAN_DURATION_SECONDS; i++) {
             setTimeout(() => {
-                console.log("Scanning, " + (SCAN_DURATION_SECONDS - i) + " seconds remaining");
-            }, i * 1000);
+                this.scanningText = "Scanning (" + i + " seconds remain)";
+            }, (SCAN_DURATION_SECONDS - i) * 1000);
         }
 
-        startScanning({
+        bluetooth.startScanning({
             // serviceUUIDs: [SERVICE_ID],
             serviceUUIDs: [], // Match any peripheral.
             seconds: SCAN_DURATION_SECONDS,
@@ -129,7 +128,7 @@ export class ItemsComponent implements OnInit, AfterViewInit {
         console.log("Connecting to: " + peripheral.name);
         this.connectingIds.add(peripheral.UUID);
 
-        connect({
+        bluetooth.connect({
             UUID: peripheral.UUID,
             onConnected: (peripheral: Peripheral) => this.onConnected(peripheral),
             onDisconnected: () => this.onDisconnected(peripheral)
@@ -138,7 +137,8 @@ export class ItemsComponent implements OnInit, AfterViewInit {
 
     public onConnected(peripheral: Peripheral): void {
         console.log("Connected to " + peripheral.name);
-        this.subscribe(peripheral);
+        this.connectingIds.delete(peripheral.UUID);
+        this.subscribeAccelerometer(peripheral);
     }
 
     public onDisconnected(peripheral: Peripheral): void {
@@ -146,24 +146,61 @@ export class ItemsComponent implements OnInit, AfterViewInit {
         console.log("Disconnected from " + peripheral.name);
     }
 
+    public subscribeAccelerometer(peripheral: Peripheral): void {
+        bluetooth.setCharacteristicLogging(false);
 
-    public subscribe(peripheral: Peripheral): void {
-        const uartService: Service = peripheral.services.find((service: Service) =>
-            service.UUID == UART_SERVICE_ID);
-        const uartTxCharacteristic = uartService.characteristics.find((characteristic: Characteristic) =>
-            characteristic.UUID == UART_RX_CHARACTERISTIC_ID);
-        startNotifying({
+        bluetooth.startNotifying({
             peripheralUUID: peripheral.UUID,
-            serviceUUID: uartService.UUID,
-            characteristicUUID: uartTxCharacteristic.UUID,
-            onNotify: (result: ReadResult) => this.onNotify(peripheral, result)
+            serviceUUID: UART_SERVICE_ID,
+            characteristicUUID: UART_RX_CHARACTERISTIC_ID,
+            onNotify: (result: ReadResult) => this.onNotifyUART(peripheral, result)
+        }).then(() => {
+            return new Promise((resolve => {
+                setTimeout(resolve, 100);
+            }));
+        }).then(() => {
+            return bluetooth.write({
+                peripheralUUID: peripheral.UUID,
+                serviceUUID: ACCELEROMETER_SERVICE_ID,
+                characteristicUUID: ACCELEROMETER_PERIOD_CHARACTERISTIC_ID,
+                value: new Uint16Array([640])
+            });
+        }).then(() => {
+            return bluetooth.startNotifying({
+                peripheralUUID: peripheral.UUID,
+                serviceUUID: ACCELEROMETER_SERVICE_ID,
+                characteristicUUID: ACCELEROMETER_DATA_CHARACTERISTIC_ID,
+                onNotify: (result: ReadResult) => this.onNotifyAccelerometer(peripheral, result)
+            });
         }).then(() => {
             console.log("Notifications subscribed");
         });
     }
 
-    public onNotify(peripheral: Peripheral, result: ReadResult): void {
+    public onNotifyUART(peripheral: Peripheral, result: ReadResult): void {
         const text = new TextDecoder("UTF-8").decode(result.value);
         console.log("Received message: " + text);
+    }
+
+    public onNotifyAccelerometer(peripheral: Peripheral, result: ReadResult): void {
+        const data = new Int16Array(result.value);
+
+        const current: number[] = [data[0] / 1000, data[1] / 1000, data[2] / 1000];
+        this.previousAccelerometer = lowPass(current, this.previousAccelerometer);
+
+        const accelerometerX = this.previousAccelerometer[0];
+        const accelerometerY = this.previousAccelerometer[1];
+        const accelerometerZ = this.previousAccelerometer[2];
+
+        // noinspection JSSuspiciousNameCombination
+        let pitch = Math.atan(accelerometerX / Math.sqrt(Math.pow(accelerometerY, 2) + Math.pow(accelerometerZ, 2)));
+        let roll = Math.atan(accelerometerY / Math.sqrt(Math.pow(accelerometerX, 2) + Math.pow(accelerometerZ, 2)));
+        pitch *= (180.0 / Math.PI);
+        roll *= -(180.0 / Math.PI);
+
+        const thing: Image = this.player1Image.nativeElement;
+        const image: android.widget.ImageView = thing.android;
+        image.setRotationX(roll);
+        image.setRotationY(pitch);
     }
 }
