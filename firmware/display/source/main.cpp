@@ -60,6 +60,13 @@ int main() {
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, onButtonAB);
 
+    new MicroBitAccelerometerService(*uBit.ble, uBit.accelerometer);
+    new MicroBitButtonService(*uBit.ble);
+    new MicroBitIOPinService(*uBit.ble, uBit.io);
+    new MicroBitLEDService(*uBit.ble, uBit.display);
+    new MicroBitMagnetometerService(*uBit.ble, uBit.compass);
+    new MicroBitTemperatureService(*uBit.ble, uBit.thermometer);
+
 
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500

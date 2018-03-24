@@ -24,7 +24,8 @@ core theme, such as p-20, btn, h2, and list-group. You can view a full list of t
 class names available for styling your app at https://docs.nativescript.org/ui/theme.
 -->
 <StackLayout class="page">
-    <Button text="Scan" (tap)="scan()"></Button>
+    <Image #foo src="res://logo" width="75%" horizontalAlignment="center"></Image>
+    <Button #bar text="Scan" (tap)="scan()"></Button>
     <ListView [items]="items" class="list-group">
         <ng-template let-item="item">
             <Label [nsRouterLink]="['/item', item.id]" [text]="item.name"

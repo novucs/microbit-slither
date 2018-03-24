@@ -1,4 +1,4 @@
-import {Component, OnInit} from "@angular/core";
+import {AfterViewInit, Component, ElementRef, OnInit, Renderer2, ViewChild} from "@angular/core";
 
 import {Item} from "./item";
 import {ItemService} from "./item.service";
@@ -13,6 +13,11 @@ import {
     startScanning
 } from "nativescript-bluetooth";
 import {TextDecoder} from "text-encoding";
+import * as app from "tns-core-modules/application";
+import * as platform from "tns-core-modules/platform";
+import {Image} from "tns-core-modules/ui/image";
+import ImageView = org.nativescript.widgets.ImageView;
+import {Button} from "tns-core-modules/ui/button";
 
 
 const SCAN_DURATION_SECONDS: number = 4;
@@ -25,7 +30,9 @@ const UART_TX_CHARACTERISTIC_ID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
     moduleId: module.id,
     templateUrl: "./items.component.html",
 })
-export class ItemsComponent implements OnInit {
+export class ItemsComponent implements OnInit, AfterViewInit {
+    @ViewChild("foo") microbitImage: ElementRef;
+    @ViewChild("bar") bar: ElementRef;
     items: Item[];
     scanning: boolean = false;
     devicesFound: number = 0;
@@ -33,14 +40,52 @@ export class ItemsComponent implements OnInit {
 
     // This pattern makes use of Angular’s dependency injection implementation to inject an instance of the ItemService service into this class. 
     // Angular knows about this service because it is included in your app’s main NgModule, defined in app.module.ts.
-    constructor(private itemService: ItemService) {
+    constructor(private itemService: ItemService,
+                private rd: Renderer2,
+                private el: ElementRef) {
     }
 
     ngOnInit(): void {
         this.items = this.itemService.getItems();
+
+        setTimeout(() => {
+            const thing: Image = this.microbitImage.nativeElement;
+            console.log(thing);
+            console.log(thing.android);
+            console.log(thing.ios);
+            console.log(thing.imageSource);
+            console.log(thing.src);
+            console.log(thing.stretch);
+
+            const image: android.widget.ImageView = thing.android;
+            image.setRotationX(3.0);
+            image.setRotationY(3.0);
+        }, 2000);
+    }
+
+    ngAfterViewInit() {
+        // console.log(this.rd);
+        // const image: android.widget.Button = new android.widget.Button(app.android.context);
+        // console.log("hi" + JSON.stringify(this.el.nativeElement));
+        // this.rd.appendChild(this.el.nativeElement, image);
     }
 
     public scan(): void {
+//         const javaLangPkg = java.lang;
+//         const androidPkg = android;
+//         const androidViewPkg = android.view;
+//
+// // access classes from inside the packages later on
+//
+//         const View = androidViewPkg.View;
+//         const image: android.widget.Button = android.app;
+//         image.setRotationX(10);
+//         image.setRotationY(10);
+//
+//
+//         const Object = javaLangPkg.Object; // === java.lang.Object;
+
+
         if (this.scanning) {
             console.log("You are already scanning!");
             return;
