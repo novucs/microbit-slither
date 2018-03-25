@@ -27,5 +27,5 @@ include_directories(display/yotta_modules/microbit/inc
         display/yotta_modules/ble
         display/yotta_modules/mbed-classic/api)
 
-add_executable(display ${sources})
+add_executable(display ${sources} display/source/SlitherClient.cpp display/source/SlitherClient.h)
 add_executable(dummy ${project})

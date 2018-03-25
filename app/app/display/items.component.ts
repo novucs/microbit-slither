@@ -8,9 +8,8 @@ import {Peripheral, ReadResult} from "nativescript-bluetooth";
 import bluetooth = require("nativescript-bluetooth");
 
 const SCAN_DURATION_SECONDS: number = 4;
-const UART_SERVICE_ID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-const UART_RX_CHARACTERISTIC_ID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-const UART_TX_CHARACTERISTIC_ID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+const SNAKE_MOVE_SERVICE_ID = "aab79343-9a83-4886-a1d3-32a800259937";
+const SNAKE_MOVE_CHARACTERISTIC_ID = "e4990f35-28f4-40d8-bfa2-f05118720a28";
 const ACCELEROMETER_SERVICE_ID = "e95d0753-251d-470a-a062-fa1922dfa9a8";
 const ACCELEROMETER_DATA_CHARACTERISTIC_ID = "e95dca4b-251d-470a-a062-fa1922dfa9a8";
 const ACCELEROMETER_PERIOD_CHARACTERISTIC_ID = "e95dfb24-251d-470a-a062-fa1922dfa9a8";
@@ -151,9 +150,9 @@ export class ItemsComponent implements OnInit, AfterViewInit {
 
         bluetooth.startNotifying({
             peripheralUUID: peripheral.UUID,
-            serviceUUID: UART_SERVICE_ID,
-            characteristicUUID: UART_RX_CHARACTERISTIC_ID,
-            onNotify: (result: ReadResult) => this.onNotifyUART(peripheral, result)
+            serviceUUID: SNAKE_MOVE_SERVICE_ID,
+            characteristicUUID: SNAKE_MOVE_CHARACTERISTIC_ID,
+            onNotify: (result: ReadResult) => this.onNotify(peripheral, result)
         }).then(() => {
             return new Promise((resolve => {
                 setTimeout(resolve, 100);
@@ -170,37 +169,43 @@ export class ItemsComponent implements OnInit, AfterViewInit {
                 peripheralUUID: peripheral.UUID,
                 serviceUUID: ACCELEROMETER_SERVICE_ID,
                 characteristicUUID: ACCELEROMETER_DATA_CHARACTERISTIC_ID,
-                onNotify: (result: ReadResult) => this.onNotifyAccelerometer(peripheral, result)
+                onNotify: (result: ReadResult) => this.onNotify(peripheral, result)
             });
         }).then(() => {
             console.log("Notifications subscribed");
         });
     }
 
-    public onNotifyUART(peripheral: Peripheral, result: ReadResult): void {
-        const text = new TextDecoder("UTF-8").decode(result.value);
-        console.log("Received message: " + text);
-    }
+    public onNotify(peripheral: Peripheral, result: ReadResult): void {
+        // Sadly, only 1 notification callback may be assigned per peripheral.
+        // Due to this weird limitation provided by the nativescript-bluetooth
+        // library, this is the adaption. Apologies if this is gross, I've not
+        // had the time spare to create a PR to resolve this for that library.
+        if (result.characteristicUUID == SNAKE_MOVE_CHARACTERISTIC_ID) {
+            const data = new Int16Array(result.value);
+            const moveX = data[0];
+            const moveY = data[1];
+            console.log("MOVEMENT RECEIVED - X: " + moveX + " Y: " + moveY);
+        } else {
+            const data = new Int16Array(result.value);
 
-    public onNotifyAccelerometer(peripheral: Peripheral, result: ReadResult): void {
-        const data = new Int16Array(result.value);
+            const current: number[] = [data[0] / 1000, data[1] / 1000, data[2] / 1000];
+            this.previousAccelerometer = lowPass(current, this.previousAccelerometer);
 
-        const current: number[] = [data[0] / 1000, data[1] / 1000, data[2] / 1000];
-        this.previousAccelerometer = lowPass(current, this.previousAccelerometer);
+            const accelerometerX = this.previousAccelerometer[0];
+            const accelerometerY = this.previousAccelerometer[1];
+            const accelerometerZ = this.previousAccelerometer[2];
 
-        const accelerometerX = this.previousAccelerometer[0];
-        const accelerometerY = this.previousAccelerometer[1];
-        const accelerometerZ = this.previousAccelerometer[2];
+            // noinspection JSSuspiciousNameCombination
+            let pitch = Math.atan(accelerometerX / Math.sqrt(Math.pow(accelerometerY, 2) + Math.pow(accelerometerZ, 2)));
+            let roll = Math.atan(accelerometerY / Math.sqrt(Math.pow(accelerometerX, 2) + Math.pow(accelerometerZ, 2)));
+            pitch *= (180.0 / Math.PI);
+            roll *= -(180.0 / Math.PI);
 
-        // noinspection JSSuspiciousNameCombination
-        let pitch = Math.atan(accelerometerX / Math.sqrt(Math.pow(accelerometerY, 2) + Math.pow(accelerometerZ, 2)));
-        let roll = Math.atan(accelerometerY / Math.sqrt(Math.pow(accelerometerX, 2) + Math.pow(accelerometerZ, 2)));
-        pitch *= (180.0 / Math.PI);
-        roll *= -(180.0 / Math.PI);
-
-        const thing: Image = this.player1Image.nativeElement;
-        const image: android.widget.ImageView = thing.android;
-        image.setRotationX(roll);
-        image.setRotationY(pitch);
+            const thing: Image = this.player1Image.nativeElement;
+            const image: android.widget.ImageView = thing.android;
+            image.setRotationX(roll);
+            image.setRotationY(pitch);
+        }
     }
 }

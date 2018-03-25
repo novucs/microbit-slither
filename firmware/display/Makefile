@@ -5,7 +5,11 @@ MICROBIT_PATH = /run/media/billy/MICROBIT
 #MICROBIT_PATH = /media/student/MICROBIT
 
 SOURCE_FILES += \
-    source/main.cpp
+    source/main.cpp \
+    source/SlitherClient.cpp \
+    source/SlitherClient.h \
+    source/SnakeMoveService.cpp \
+    source/SnakeMoveService.h
 
 OUTPUT_FILE = build/bbc-microbit-classic-gcc/source/microbit-display-combined.hex
 
