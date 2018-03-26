@@ -5,7 +5,7 @@
 #include <MicroBit.h>
 #include "SnakeMoveService.h"
 
-#define MOVEMENT_THRESHOLD 150
+#define MOVEMENT_THRESHOLD 450
 
 namespace slither {
 

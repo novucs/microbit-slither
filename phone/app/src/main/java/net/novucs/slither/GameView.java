@@ -7,7 +7,7 @@ import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class GameView extends View {
@@ -52,7 +52,7 @@ public class GameView extends View {
         drawBlocks(canvas, BlockType.PLAYER_2, snapshot.getPlayer2(), blockWidth, blockHeight);
     }
 
-    private void drawBlocks(Canvas canvas, BlockType type, List<Vector2i> locations,
+    private void drawBlocks(Canvas canvas, BlockType type, Collection<Vector2i> locations,
                             int blockWidth, int blockHeight) {
         paint.setColor(type.getColor());
         for (Vector2i location : locations) {

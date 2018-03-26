@@ -11,6 +11,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.ImageView;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -25,8 +26,12 @@ public class MenuActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_menu);
 
+        ImageView avatar1 = findViewById(R.id.playerImage1);
+        ImageView avatar2 = findViewById(R.id.playerImage2);
+        Player player1 = new Player(avatar1);
+        Player player2 = new Player(avatar2);
         GameView gameView = findViewById(R.id.game);
-        Game game = new Game(gameView);
+        Game game = new Game(gameView, player1, player2);
 
         ensurePermissionsGranted(Manifest.permission.ACCESS_COARSE_LOCATION,
                 Manifest.permission.ACCESS_FINE_LOCATION);

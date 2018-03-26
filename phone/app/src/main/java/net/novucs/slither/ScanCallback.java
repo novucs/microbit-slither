@@ -2,7 +2,6 @@ package net.novucs.slither;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.widget.ImageView;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -50,21 +49,17 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
             }
 
             PlayerConnection connection = new PlayerConnection(menuActivity, device);
-            ImageView avatar;
             Player player;
 
             if (connectedAddresses.isEmpty()) {
-                avatar = menuActivity.findViewById(R.id.playerImage1);
-                avatar.setImageResource(R.drawable.snakeblue);
-                player = new Player(connection, avatar);
-                game.setPlayer1(player);
+                player = game.getPlayer1();
+                player.getAvatar().setImageResource(R.drawable.snakeblue);
             } else {
-                avatar = menuActivity.findViewById(R.id.playerImage2);
-                avatar.setImageResource(R.drawable.snakered);
-                player = new Player(connection, avatar);
-                game.setPlayer2(player);
+                player = game.getPlayer2();
+                player.getAvatar().setImageResource(R.drawable.snakered);
             }
 
+            player.setConnection(connection);
             MovementHandler movementHandler = new MovementHandler(player);
             AvatarPreviewHandler avatarPreview = new AvatarPreviewHandler(player);
 
