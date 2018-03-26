@@ -5,47 +5,44 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
-import android.widget.ImageView;
 
-import static net.novucs.slither.BLEAttributes.ACCELEROMETER_DATA_CHARACTERISTIC;
-import static net.novucs.slither.BLEAttributes.ACCELEROMETER_DATA_CHARACTERISTIC_NOTIFY;
-import static net.novucs.slither.BLEAttributes.ACCELEROMETER_SERVICE;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PlayerConnection extends BluetoothGattCallback {
 
-    private final MainActivity activity;
+    private final Map<Subscription, OnNotification> subscriptions = new HashMap<>();
+    private final MenuActivity activity;
     private final BluetoothDevice device;
-    private final ImageView image;
+    private final AtomicBoolean servicesFound = new AtomicBoolean(false);
+    private final LinkedBlockingQueue<SubscriptionRequest> subscriptionRequests = new LinkedBlockingQueue<>();
     private BluetoothGatt gatt;
-    private double[] previousRotation = null;
 
-    public PlayerConnection(MainActivity activity, BluetoothDevice device, ImageView image) {
+    public PlayerConnection(MenuActivity activity, BluetoothDevice device) {
         this.activity = activity;
         this.device = device;
-        this.image = image;
+    }
+
+    public BluetoothGatt getGatt() {
+        return gatt;
     }
 
     public void connect() {
         gatt = device.connectGatt(activity, false, this);
     }
 
-    private double[] lowPass(double[] a, double[] b) {
-        if (b == null) {
-            return a;
-        }
-
-        for (int i = 0; i < a.length; i++) {
-            b[i] += 0.1 * (a[i] - b[i]);
-        }
-
-        return b;
-    }
-
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
-            this.gatt.discoverServices();
+            gatt.discoverServices();
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
             System.out.println("Disconnected from the GATT server");
         }
@@ -53,36 +50,114 @@ public class PlayerConnection extends BluetoothGattCallback {
 
     @Override
     public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-        byte[] data = characteristic.getValue();
-        double x = ((data[1] << 8) + data[0]) / 1000f;
-        double y = ((data[3] << 8) + data[2]) / 1000f;
-        double z = ((data[5] << 8) + data[4]) / 1000f;
-        previousRotation = lowPass(new double[]{x, y, z}, previousRotation);
-        x = previousRotation[0];
-        y = previousRotation[1];
-        z = previousRotation[2];
-
-        double radian = 180 / Math.PI;
-        double pitch = Math.atan(x / Math.sqrt(Math.pow(y, 2) + Math.pow(z, 2))) * radian;
-        double roll = -Math.atan(y / Math.sqrt(Math.pow(x, 2) + Math.pow(z, 2))) * radian;
-
-        image.setRotationX((float) roll);
-        image.setRotationY((float) pitch);
+        Subscription subscription = Subscription.of(characteristic);
+        OnNotification onNotification = subscriptions.get(subscription);
+        if (onNotification != null) {
+            onNotification.onNotification(characteristic.getValue());
+        }
     }
 
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-        if (status != BluetoothGatt.GATT_SUCCESS) {
+        servicesFound.set(true);
+        System.out.println("DISCOVERED SERVICES: " + subscriptionRequests.size());
+        List<SubscriptionRequest> requests = new LinkedList<>();
+        subscriptionRequests.drainTo(requests);
+        for (SubscriptionRequest request : requests) {
+            subscribe(request.getCallback(), request.getServiceId(), request.getCharacteristicId());
+        }
+    }
+
+    public void subscribe(OnNotification callback, UUID serviceId, UUID characteristicId)
+            throws IllegalArgumentException {
+        if (!servicesFound.get()) {
+            System.out.println("SERVICES NOT FOUND: " + subscriptionRequests.size());
+            subscriptionRequests.add(new SubscriptionRequest(callback, serviceId, characteristicId));
             return;
         }
 
-        BluetoothGattCharacteristic characteristic = gatt
-                .getService(ACCELEROMETER_SERVICE)
-                .getCharacteristic(ACCELEROMETER_DATA_CHARACTERISTIC);
-        gatt.setCharacteristicNotification(characteristic, true);
+        BluetoothGattService service = gatt.getService(serviceId);
+        if (service == null) {
+            throw new IllegalArgumentException("No such service exists");
+        }
 
-        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(ACCELEROMETER_DATA_CHARACTERISTIC_NOTIFY);
+        BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicId);
+        if (characteristic == null) {
+            throw new IllegalArgumentException("No such characteristic exists");
+        }
+
+        if (characteristic.getDescriptors().size() == 0) {
+            throw new IllegalArgumentException("No descriptors exist for the provided characteristic");
+        }
+
+        gatt.setCharacteristicNotification(characteristic, true);
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptors().get(0);
         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
         gatt.writeDescriptor(descriptor);
+
+        Subscription subscription = Subscription.of(characteristic);
+        subscriptions.put(subscription, callback);
+    }
+
+    public interface OnNotification {
+        void onNotification(byte[] data);
+    }
+
+    private static class SubscriptionRequest {
+        private final OnNotification callback;
+        private final UUID serviceId;
+        private final UUID characteristicId;
+
+        public SubscriptionRequest(OnNotification callback, UUID serviceId, UUID characteristicId) {
+            this.callback = callback;
+            this.serviceId = serviceId;
+            this.characteristicId = characteristicId;
+        }
+
+        public OnNotification getCallback() {
+            return callback;
+        }
+
+        public UUID getServiceId() {
+            return serviceId;
+        }
+
+        public UUID getCharacteristicId() {
+            return characteristicId;
+        }
+    }
+
+    private static class Subscription {
+        private final UUID serviceId;
+        private final UUID characteristicId;
+
+        public Subscription(UUID serviceId, UUID characteristicId) {
+            this.serviceId = serviceId;
+            this.characteristicId = characteristicId;
+        }
+
+        public static Subscription of(BluetoothGattCharacteristic characteristic) {
+            return new Subscription(characteristic.getService().getUuid(),
+                    characteristic.getUuid());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Subscription that = (Subscription) o;
+
+            if (serviceId != null ? !serviceId.equals(that.serviceId) : that.serviceId != null)
+                return false;
+            return characteristicId != null ? characteristicId.equals(that.characteristicId) : that.characteristicId == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = serviceId != null ? serviceId.hashCode() : 0;
+            result = 31 * result + (characteristicId != null ? characteristicId.hashCode() : 0);
+            return result;
+        }
     }
 }
