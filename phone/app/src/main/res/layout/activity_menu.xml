@@ -12,7 +12,7 @@
         android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Welcome to micro:bit Slither!"
+        android:text="Playing Slither!"
         android:textAlignment="center"
         android:textSize="30sp"
         android:textStyle="bold" />
@@ -73,13 +73,11 @@
         android:layout_centerVertical="true"
         android:visibility="invisible" />
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:focusable="true"
-        android:clickable="true"
+
+    <net.novucs.slither.GameView
+        android:id="@+id/game"
         android:layout_below="@id/buttonShim"
-        android:text="Start Game" />
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
 
 </RelativeLayout>

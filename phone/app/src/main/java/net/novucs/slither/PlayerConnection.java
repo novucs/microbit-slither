@@ -10,10 +10,8 @@ import android.bluetooth.BluetoothProfile;
 
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -24,6 +22,7 @@ public class PlayerConnection extends BluetoothGattCallback {
     private final BluetoothDevice device;
     private final AtomicBoolean servicesFound = new AtomicBoolean(false);
     private final LinkedBlockingQueue<SubscriptionRequest> subscriptionRequests = new LinkedBlockingQueue<>();
+    private final LinkedList<SubscriptionRequest> bleSafeRequests = new LinkedList<>();
     private BluetoothGatt gatt;
 
     public PlayerConnection(MenuActivity activity, BluetoothDevice device) {
@@ -60,10 +59,25 @@ public class PlayerConnection extends BluetoothGattCallback {
     @Override
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         servicesFound.set(true);
-        System.out.println("DISCOVERED SERVICES: " + subscriptionRequests.size());
-        List<SubscriptionRequest> requests = new LinkedList<>();
-        subscriptionRequests.drainTo(requests);
-        for (SubscriptionRequest request : requests) {
+        subscriptionRequests.drainTo(bleSafeRequests);
+        SubscriptionRequest request = bleSafeRequests.pop();
+
+        if (request != null) {
+            subscribe(request.getCallback(), request.getServiceId(), request.getCharacteristicId());
+        }
+    }
+
+    @Override
+    public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        subscriptionRequests.drainTo(bleSafeRequests);
+
+        if (bleSafeRequests.isEmpty()) {
+            return;
+        }
+
+        SubscriptionRequest request = bleSafeRequests.pop();
+
+        if (request != null) {
             subscribe(request.getCallback(), request.getServiceId(), request.getCharacteristicId());
         }
     }
@@ -71,7 +85,6 @@ public class PlayerConnection extends BluetoothGattCallback {
     public void subscribe(OnNotification callback, UUID serviceId, UUID characteristicId)
             throws IllegalArgumentException {
         if (!servicesFound.get()) {
-            System.out.println("SERVICES NOT FOUND: " + subscriptionRequests.size());
             subscriptionRequests.add(new SubscriptionRequest(callback, serviceId, characteristicId));
             return;
         }

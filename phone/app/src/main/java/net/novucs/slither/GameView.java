@@ -2,16 +2,18 @@ package net.novucs.slither;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
 public class GameView extends View {
 
     private final Paint paint = new Paint();
-    private final BlockingReference<Game> game = new BlockingReference<>();
+    private final AtomicReference<GameSnapshot> snapshot = new AtomicReference<>();
 
     public GameView(Context context) {
         super(context);
@@ -25,17 +27,36 @@ public class GameView extends View {
         super(context, attrs, defStyleAttr);
     }
 
+    public AtomicReference<GameSnapshot> getSnapshot() {
+        return snapshot;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        int x = getWidth();
-        int y = getHeight();
-        int radius;
-        radius = 100;
+
+        GameSnapshot snapshot = this.snapshot.get();
+        if (snapshot == null) {
+            return;
+        }
+
+        int blockWidth = getWidth() / Game.MAP_WIDTH;
+        int blockHeight = getHeight() / Game.MAP_HEIGHT;
+
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.WHITE);
+        paint.setColor(BlockType.BACKGROUND.getColor());
         canvas.drawPaint(paint);
-        paint.setColor(Color.parseColor("#CD5C5C"));
-        canvas.drawCircle(x / 2, y / 2, radius, paint);
+
+        drawBlocks(canvas, BlockType.REWARD, snapshot.getRewards(), blockWidth, blockHeight);
+        drawBlocks(canvas, BlockType.PLAYER_1, snapshot.getPlayer1(), blockWidth, blockHeight);
+        drawBlocks(canvas, BlockType.PLAYER_2, snapshot.getPlayer2(), blockWidth, blockHeight);
+    }
+
+    private void drawBlocks(Canvas canvas, BlockType type, List<Vector2i> locations,
+                            int blockWidth, int blockHeight) {
+        paint.setColor(type.getColor());
+        for (Vector2i location : locations) {
+            canvas.drawRect(location.toBlock(blockWidth, blockHeight), paint);
+        }
     }
 }
