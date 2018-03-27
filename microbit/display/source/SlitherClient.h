@@ -29,6 +29,10 @@ namespace slither {
         void onConnected(MicroBitEvent);
 
         void onDisconnected(MicroBitEvent);
+
+        void onButtonBDown(MicroBitEvent);
+
+        void onButtonBUp(MicroBitEvent);
     };
 
 }

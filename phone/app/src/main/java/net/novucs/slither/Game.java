@@ -62,8 +62,8 @@ public class Game implements Runnable {
 
     private GameSnapshot snapshot() {
         return new GameSnapshot(new ArrayList<>(rewards),
-                new ArrayList<>(player1.getBody()),
-                new ArrayList<>(player2.getBody()));
+                new LinkedList<>(player1.getBody()),
+                new LinkedList<>(player2.getBody()));
     }
 
     private Vector2i nextValidSpawn() {
@@ -87,12 +87,12 @@ public class Game implements Runnable {
 
     private void tickPlayer(Player player, Player opponent) {
         // Player has not made a move from their starting position yet.
-        Vector2i movement = player.getMovement().get();
+        Vector2i movement = player.getDirection().get();
         if (movement.isDefault()) {
             return;
         }
 
-        for (int i = 0; i < player.getSpeed(); i++) {
+        for (int i = 0; i < player.getSpeed().get(); i++) {
             move(player, opponent, movement);
         }
     }

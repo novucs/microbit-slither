@@ -13,10 +13,10 @@ namespace slither {
 
         // Register event listeners.
         microBit->messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, this, &SlitherClient::onConnected);
-        microBit->messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, this,
-                                    &SlitherClient::onDisconnected);
-        microBit->messageBus.listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this,
-                                    &SlitherClient::onAccelerometerChange);
+        microBit->messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, this, &SlitherClient::onDisconnected);
+        microBit->messageBus.listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this, &SlitherClient::onAccelerometerChange);
+        microBit->messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_DOWN, this, &SlitherClient::onButtonBDown);
+        microBit->messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_UP, this, &SlitherClient::onButtonBUp);
     }
 
     void SlitherClient::onConnected(MicroBitEvent) {
@@ -29,9 +29,17 @@ namespace slither {
         connected = false;
     }
 
+    void SlitherClient::onButtonBDown(MicroBitEvent) {
+        moveService->sendSpeed(2);
+    }
+
+    void SlitherClient::onButtonBUp(MicroBitEvent) {
+        moveService->sendSpeed(1);
+    }
+
     void SlitherClient::onAccelerometerChange(MicroBitEvent) {
-        int16_t x = 0;
-        int16_t y = 0;
+        int8_t x = 0;
+        int8_t y = 0;
         int accelerometerX = microBit->accelerometer.getX();
         int accelerometerY = microBit->accelerometer.getY();
 
@@ -47,11 +55,6 @@ namespace slither {
             y = -1;
         }
 
-        if (microBit->buttonB.isPressed()) {
-            x *= 2;
-            y *= 2;
-        }
-
         if ((x == previousX && y == previousY) || (x == 0 && y == 0) || (microBit->systemTime() < nextAllowedMove)) {
             return;
         }
@@ -61,7 +64,7 @@ namespace slither {
         previousX = x;
         previousY = y;
         nextAllowedMove = microBit->systemTime() + 50;
-        moveService->sendMove((uint16_t) x, (uint16_t) y);
+        moveService->sendDirection((uint8_t) x, (uint8_t) y);
     }
 
     SlitherClient::~SlitherClient() {

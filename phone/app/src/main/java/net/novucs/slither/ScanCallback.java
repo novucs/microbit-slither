@@ -8,8 +8,9 @@ import java.util.Set;
 
 import static net.novucs.slither.BLEAttributes.ACCELEROMETER_DATA_CHARACTERISTIC;
 import static net.novucs.slither.BLEAttributes.ACCELEROMETER_SERVICE;
-import static net.novucs.slither.BLEAttributes.SNAKE_MOVE_CHARACTERISTIC;
+import static net.novucs.slither.BLEAttributes.SNAKE_DIRECTION_CHARACTERISTIC;
 import static net.novucs.slither.BLEAttributes.SNAKE_MOVE_SERVICE;
+import static net.novucs.slither.BLEAttributes.SNAKE_SPEED_CHARACTERISTIC;
 import static net.novucs.slither.Game.REQUIRED_PLAYER_COUNT;
 
 public class ScanCallback implements BluetoothAdapter.LeScanCallback {
@@ -60,8 +61,9 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
             }
 
             player.setConnection(connection);
-            MovementHandler movementHandler = new MovementHandler(player);
             AvatarPreviewHandler avatarPreview = new AvatarPreviewHandler(player);
+            DirectionHandler directionHandler = new DirectionHandler(player);
+            SpeedHandler speedHandler = new SpeedHandler(player);
 
             connectedAddresses.add(device.getAddress());
 
@@ -69,7 +71,8 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
             // and snake move characteristics.
             connection.connect();
             connection.subscribe(avatarPreview, ACCELEROMETER_SERVICE, ACCELEROMETER_DATA_CHARACTERISTIC);
-            connection.subscribe(movementHandler, SNAKE_MOVE_SERVICE, SNAKE_MOVE_CHARACTERISTIC);
+            connection.subscribe(directionHandler, SNAKE_MOVE_SERVICE, SNAKE_DIRECTION_CHARACTERISTIC);
+            connection.subscribe(speedHandler, SNAKE_MOVE_SERVICE, SNAKE_SPEED_CHARACTERISTIC);
 
             // Stop scanning if we have reached the required player count.
             if (connectedAddresses.size() == REQUIRED_PLAYER_COUNT) {

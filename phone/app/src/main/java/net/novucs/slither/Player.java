@@ -4,16 +4,17 @@ import android.widget.ImageView;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class Player {
     private final ImageView avatar;
-    private final AtomicReference<Vector2i> movement = new AtomicReference<>(new Vector2i());
+    private final AtomicReference<Vector2i> direction = new AtomicReference<>(new Vector2i());
+    private final AtomicInteger speed = new AtomicInteger(1);
     private final Deque<Vector2i> body = new LinkedList<>();
     private PlayerConnection connection;
     private int growthTicks = 0;
     private int score = 0;
-    private int speed = 1;
 
     public Player(ImageView avatar) {
         this.connection = connection;
@@ -32,8 +33,12 @@ public class Player {
         return avatar;
     }
 
-    public AtomicReference<Vector2i> getMovement() {
-        return movement;
+    public AtomicReference<Vector2i> getDirection() {
+        return direction;
+    }
+
+    public AtomicInteger getSpeed() {
+        return speed;
     }
 
     public Deque<Vector2i> getBody() {
@@ -58,14 +63,6 @@ public class Player {
 
     public void setScore(int score) {
         this.score = score;
-    }
-
-    public int getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(int speed) {
-        this.speed = speed;
     }
 
     public void reward() {

@@ -50,6 +50,12 @@ public class GameView extends View {
         drawBlocks(canvas, BlockType.REWARD, snapshot.getRewards(), blockWidth, blockHeight);
         drawBlocks(canvas, BlockType.PLAYER_1, snapshot.getPlayer1(), blockWidth, blockHeight);
         drawBlocks(canvas, BlockType.PLAYER_2, snapshot.getPlayer2(), blockWidth, blockHeight);
+
+        paint.setColor(BlockType.PLAYER_1_HEAD.getColor());
+        canvas.drawRect(snapshot.getPlayer1().getLast().toBlock(blockWidth, blockHeight), paint);
+
+        paint.setColor(BlockType.PLAYER_2_HEAD.getColor());
+        canvas.drawRect(snapshot.getPlayer2().getLast().toBlock(blockWidth, blockHeight), paint);
     }
 
     private void drawBlocks(Canvas canvas, BlockType type, Collection<Vector2i> locations,

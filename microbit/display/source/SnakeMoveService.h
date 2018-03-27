@@ -9,14 +9,17 @@
 namespace slither {
 
     extern const uint8_t SnakeMoveServiceUUID[];
-    extern const uint8_t SnakeMoveServiceDataUUID[];
+    extern const uint8_t SnakeMoveDirectionUUID[];
+    extern const uint8_t SnakeMoveSpeedUUID[];
 
     class SnakeMoveService {
     private:
 
         BLEDevice &ble;
-        uint16_t movementBuffer[2];
-        GattAttribute::Handle_t moveCharacteristicHandle;
+        uint8_t directionBuffer[2];
+        uint8_t speedBuffer[1];
+        GattAttribute::Handle_t directionHandle;
+        GattAttribute::Handle_t speedHandle;
 
     public:
 
@@ -24,7 +27,9 @@ namespace slither {
 
         void initialize();
 
-        void sendMove(uint16_t x, uint16_t y);
+        void sendDirection(uint8_t x, uint8_t y);
+
+        void sendSpeed(uint8_t speed);
     };
 }
 
