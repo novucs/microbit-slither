@@ -5,7 +5,7 @@ import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicBoolean
 
-class PlayerConnection(private val activity: MenuActivity,
+class PlayerConnection(private val context: SlitherActivity,
                        private val device: BluetoothDevice) : BluetoothGattCallback() {
 
     private val servicesFound = AtomicBoolean(false)
@@ -22,7 +22,7 @@ class PlayerConnection(private val activity: MenuActivity,
         }
 
         connected = true
-        gatt = device.connectGatt(activity, false, this)
+        gatt = device.connectGatt(context, false, this)
     }
 
     fun onDisconnect(callback: () -> Unit) {
@@ -46,13 +46,11 @@ class PlayerConnection(private val activity: MenuActivity,
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         servicesFound.set(true)
         subscriptionRequests.drainTo(bleSafeRequests)
-
         if (bleSafeRequests.isEmpty()) {
             return
         }
 
         val request = bleSafeRequests.pop()
-
         if (request != null) {
             subscribe(request.callback, request.serviceId, request.characteristicId)
         }
@@ -60,13 +58,11 @@ class PlayerConnection(private val activity: MenuActivity,
 
     override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
         subscriptionRequests.drainTo(bleSafeRequests)
-
         if (bleSafeRequests.isEmpty()) {
             return
         }
 
         val request = bleSafeRequests.pop()
-
         if (request != null) {
             subscribe(request.callback, request.serviceId, request.characteristicId)
         }
@@ -74,7 +70,6 @@ class PlayerConnection(private val activity: MenuActivity,
 
     fun subscribe(callback: (data: ByteArray) -> Unit, serviceId: UUID, characteristicId: UUID) {
         val gatt = this.gatt ?: return
-
         if (!servicesFound.get()) {
             subscriptionRequests.add(SubscriptionRequest(callback, serviceId, characteristicId))
             return

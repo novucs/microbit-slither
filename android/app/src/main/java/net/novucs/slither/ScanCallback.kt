@@ -9,7 +9,7 @@ import net.novucs.slither.BLEAttributes.SNAKE_MOVE_SERVICE
 import net.novucs.slither.BLEAttributes.SNAKE_SPEED_CHARACTERISTIC
 import net.novucs.slither.Game.Companion.REQUIRED_PLAYER_COUNT
 
-class ScanCallback(private val context: MenuActivity,
+class ScanCallback(private val context: SlitherActivity,
                    private val bluetoothAdapter: BluetoothAdapter,
                    private val game: Game) : BluetoothAdapter.LeScanCallback {
 

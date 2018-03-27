@@ -14,7 +14,7 @@ import android.widget.ImageView
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-class MenuActivity : AppCompatActivity() {
+class SlitherActivity : AppCompatActivity() {
 
     private val requestingPermissions = AtomicBoolean(false)
 
