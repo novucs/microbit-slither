@@ -73,7 +73,6 @@
         android:layout_centerVertical="true"
         android:visibility="invisible" />
 
-
     <net.novucs.slither.GameView
         android:id="@+id/game"
         android:layout_below="@id/buttonShim"

@@ -2,10 +2,12 @@ package net.novucs.slither;
 
 public class AvatarPreviewHandler implements PlayerConnection.OnNotification {
 
+    private final MenuActivity menuActivity;
     private final Player player;
     private double[] previousRotation = null;
 
-    public AvatarPreviewHandler(Player player) {
+    public AvatarPreviewHandler(MenuActivity menuActivity, Player player) {
+        this.menuActivity = menuActivity;
         this.player = player;
     }
 
@@ -20,11 +22,16 @@ public class AvatarPreviewHandler implements PlayerConnection.OnNotification {
         z = previousRotation[2];
 
         double radian = 180 / Math.PI;
-        double pitch = Math.atan(x / Math.sqrt(Math.pow(y, 2) + Math.pow(z, 2))) * radian;
-        double roll = -Math.atan(y / Math.sqrt(Math.pow(x, 2) + Math.pow(z, 2))) * radian;
+        final double pitch = Math.atan(x / Math.sqrt(Math.pow(y, 2) + Math.pow(z, 2))) * radian;
+        final double roll = -Math.atan(y / Math.sqrt(Math.pow(x, 2) + Math.pow(z, 2))) * radian;
 
-        player.getAvatar().setRotationX((float) roll);
-        player.getAvatar().setRotationY((float) pitch);
+        menuActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                player.getAvatar().setRotationX((float) roll);
+                player.getAvatar().setRotationY((float) pitch);
+            }
+        });
     }
 
     private double[] lowPass(double[] a, double[] b) {

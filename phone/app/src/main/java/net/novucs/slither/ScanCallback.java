@@ -61,7 +61,7 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
             }
 
             player.setConnection(connection);
-            AvatarPreviewHandler avatarPreview = new AvatarPreviewHandler(player);
+            AvatarPreviewHandler avatarPreview = new AvatarPreviewHandler(menuActivity, player);
             DirectionHandler directionHandler = new DirectionHandler(player);
             SpeedHandler speedHandler = new SpeedHandler(player);
 
@@ -77,6 +77,7 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
             // Stop scanning if we have reached the required player count.
             if (connectedAddresses.size() == REQUIRED_PLAYER_COUNT) {
                 bluetoothAdapter.stopLeScan(ScanCallback.this);
+                game.setState(GameState.PLAY);
             }
         }
     }

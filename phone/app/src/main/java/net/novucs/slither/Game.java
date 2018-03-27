@@ -18,6 +18,7 @@ public class Game implements Runnable {
     private final List<Vector2i> rewards = new LinkedList<>();
     private final Player player1;
     private final Player player2;
+    private GameState state = GameState.CONNECT;
 
     public Game(GameView view, Player player1, Player player2) {
         this.view = view;
@@ -37,14 +38,17 @@ public class Game implements Runnable {
         return player2;
     }
 
+    public GameState getState() {
+        return state;
+    }
+
+    public void setState(GameState state) {
+        this.state = state;
+    }
+
     @Override
     public void run() {
-        for (int i = 0; i < INITIAL_REWARD_COUNT; i++) {
-            rewards.add(nextValidSpawn());
-        }
-
-        player1.getBody().add(nextValidSpawn());
-        player2.getBody().add(nextValidSpawn());
+        startPlay();
 
         while (!Thread.interrupted()) {
             tick();
@@ -60,10 +64,30 @@ public class Game implements Runnable {
         }
     }
 
+    private void startPlay() {
+        player1.getBody().clear();
+        player2.getBody().clear();
+        rewards.clear();
+
+        for (int i = 0; i < INITIAL_REWARD_COUNT; i++) {
+            rewards.add(nextValidSpawn());
+        }
+
+        player1.getBody().add(nextValidSpawn());
+        player2.getBody().add(nextValidSpawn());
+    }
+
     private GameSnapshot snapshot() {
-        return new GameSnapshot(new ArrayList<>(rewards),
-                new LinkedList<>(player1.getBody()),
-                new LinkedList<>(player2.getBody()));
+        switch (state) {
+            case CONNECT:
+                return new GameSnapshot.Connect("Waiting for players to connect...");
+            case PLAY:
+                return new GameSnapshot.Play(new ArrayList<>(rewards),
+                        new LinkedList<>(player1.getBody()),
+                        new LinkedList<>(player2.getBody()));
+            default:
+                return new GameSnapshot.Complete("Game is complete?");
+        }
     }
 
     private Vector2i nextValidSpawn() {
