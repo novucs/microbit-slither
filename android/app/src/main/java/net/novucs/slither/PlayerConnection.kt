@@ -45,18 +45,14 @@ class PlayerConnection(private val context: SlitherActivity,
 
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
         servicesFound.set(true)
-        subscriptionRequests.drainTo(bleSafeRequests)
-        if (bleSafeRequests.isEmpty()) {
-            return
-        }
-
-        val request = bleSafeRequests.pop()
-        if (request != null) {
-            subscribe(request.callback, request.serviceId, request.characteristicId)
-        }
+        createNextSubscription()
     }
 
     override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+        createNextSubscription()
+    }
+
+    private fun createNextSubscription() {
         subscriptionRequests.drainTo(bleSafeRequests)
         if (bleSafeRequests.isEmpty()) {
             return
