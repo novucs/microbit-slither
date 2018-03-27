@@ -55,10 +55,10 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
 
             if (game.getPlayer1().getConnection() == null) {
                 player = game.getPlayer1();
-                context.runOnUiThread(new UpdatePlayerAvatar(player, R.drawable.snakeblue));
+                context.runOnUiThread(new AvatarUpdater(player, R.drawable.snakeblue));
             } else {
                 player = game.getPlayer2();
-                context.runOnUiThread(new UpdatePlayerAvatar(player, R.drawable.snakered));
+                context.runOnUiThread(new AvatarUpdater(player, R.drawable.snakered));
             }
 
             player.setConnection(connection);
@@ -79,7 +79,7 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
                     game.setState(GameState.CONNECT);
                     bluetoothAdapter.startLeScan(ScanCallback.this);
                     finalPlayer.setConnection(null);
-                    context.runOnUiThread(new UpdatePlayerAvatar(finalPlayer, R.drawable.snakegrey));
+                    context.runOnUiThread(new AvatarUpdater(finalPlayer, R.drawable.snakegrey));
                 }
             });
 
@@ -96,12 +96,12 @@ public class ScanCallback implements BluetoothAdapter.LeScanCallback {
         }
     }
 
-    private class UpdatePlayerAvatar implements Runnable {
+    private class AvatarUpdater implements Runnable {
 
         private final Player player;
         private final int resourceId;
 
-        public UpdatePlayerAvatar(Player player, int resourceId) {
+        public AvatarUpdater(Player player, int resourceId) {
             this.player = player;
             this.resourceId = resourceId;
         }
