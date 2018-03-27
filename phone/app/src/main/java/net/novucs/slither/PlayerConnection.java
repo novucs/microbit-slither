@@ -17,13 +17,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PlayerConnection extends BluetoothGattCallback {
 
-    private final Map<Subscription, OnNotification> subscriptions = new HashMap<>();
-    private final MenuActivity activity;
-    private final BluetoothDevice device;
     private final AtomicBoolean servicesFound = new AtomicBoolean(false);
     private final LinkedBlockingQueue<SubscriptionRequest> subscriptionRequests = new LinkedBlockingQueue<>();
     private final LinkedList<SubscriptionRequest> bleSafeRequests = new LinkedList<>();
+    private final Map<Subscription, OnNotification> subscriptions = new HashMap<>();
+    private final MenuActivity activity;
+    private final BluetoothDevice device;
+    private Runnable disconnectCallback;
     private BluetoothGatt gatt;
+    private boolean connected = false;
 
     public PlayerConnection(MenuActivity activity, BluetoothDevice device) {
         this.activity = activity;
@@ -34,7 +36,13 @@ public class PlayerConnection extends BluetoothGattCallback {
         return gatt;
     }
 
-    public void connect() {
+    public void connect(Runnable disconnectCallback) {
+        if (connected) {
+            throw new IllegalStateException("Already connected");
+        }
+
+        this.disconnectCallback = disconnectCallback;
+        connected = true;
         gatt = device.connectGatt(activity, false, this);
     }
 
@@ -43,7 +51,7 @@ public class PlayerConnection extends BluetoothGattCallback {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             gatt.discoverServices();
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-            System.out.println("Disconnected from the GATT server");
+            disconnectCallback.run();
         }
     }
 
@@ -60,6 +68,11 @@ public class PlayerConnection extends BluetoothGattCallback {
     public void onServicesDiscovered(BluetoothGatt gatt, int status) {
         servicesFound.set(true);
         subscriptionRequests.drainTo(bleSafeRequests);
+
+        if (bleSafeRequests.isEmpty()) {
+            return;
+        }
+
         SubscriptionRequest request = bleSafeRequests.pop();
 
         if (request != null) {
@@ -91,16 +104,19 @@ public class PlayerConnection extends BluetoothGattCallback {
 
         BluetoothGattService service = gatt.getService(serviceId);
         if (service == null) {
-            throw new IllegalArgumentException("No such service exists");
+            gatt.disconnect();
+            return;
         }
 
         BluetoothGattCharacteristic characteristic = service.getCharacteristic(characteristicId);
         if (characteristic == null) {
-            throw new IllegalArgumentException("No such characteristic exists");
+            gatt.disconnect();
+            return;
         }
 
         if (characteristic.getDescriptors().size() == 0) {
-            throw new IllegalArgumentException("No descriptors exist for the provided characteristic");
+            gatt.disconnect();
+            return;
         }
 
         gatt.setCharacteristicNotification(characteristic, true);
