@@ -1,17 +1,17 @@
 package net.novucs.slither
 
 import android.Manifest
-import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothManager
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
+import no.nordicsemi.android.support.v18.scanner.BluetoothLeScannerCompat
+import no.nordicsemi.android.support.v18.scanner.ScanCallback
+import no.nordicsemi.android.support.v18.scanner.ScanResult
 import java.util.concurrent.atomic.AtomicBoolean
+
 
 class SlitherActivity : AppCompatActivity() {
 
@@ -19,23 +19,7 @@ class SlitherActivity : AppCompatActivity() {
 
     private val requestingPermissions = AtomicBoolean(false)
 
-    private val bluetoothAdapter: BluetoothAdapter by lazy {
-        // Try to fetch the Bluetooth adapter.
-        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        var adapter: BluetoothAdapter? = bluetoothManager.adapter
-
-        // When either not found or not enabled, attempt to enable the
-        // Bluetooth service and try again.
-        if (adapter == null || !adapter.isEnabled) {
-            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-            startActivityForResult(enableBtIntent, REQUEST_CODE_ENABLE_BLUETOOTH)
-            adapter = bluetoothManager.adapter
-        }
-
-        // Provide the adapter when found, otherwise except. No devices without
-        // Bluetooth LE should have this app installed.
-        return@lazy adapter ?: throw RuntimeException("No Bluetooth adapter found")
-    }
+    private val scanner = BluetoothLeScannerCompat.getScanner()
 
     private val game: Game by lazy {
         val player1 = Player(findViewById(R.id.playerImage1))
@@ -44,8 +28,11 @@ class SlitherActivity : AppCompatActivity() {
         return@lazy Game(gameView, player1, player2)
     }
 
-    private val scanCallback = BluetoothAdapter.LeScanCallback { device, _, _ ->
-        runOnUiThread { connect(device) }
+    private val scanCallback = object : ScanCallback() {
+        override fun onScanResult(callbackType: Int, result: ScanResult?) {
+            // Attempt to connect to all valid found devices via the UI thread.
+            result?.device?.let { device -> runOnUiThread { connect(device) } }
+        }
     }
 
     public override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,11 +41,22 @@ class SlitherActivity : AppCompatActivity() {
 
         ensurePermissionsGranted(Manifest.permission.ACCESS_COARSE_LOCATION)
 
-        // Scan until all players have been found.
-        bluetoothAdapter.startLeScan(scanCallback)
+        startScan()
 
         val gameThread = Thread(game)
         gameThread.start()
+    }
+
+    private fun startScan() {
+        // BLE Scanning does not find all services UUIDs advertised, we're
+        // disconnecting from devices found invalid when connecting. It appears
+        // this is down to an unfixed Android bug for scanning 128bit UUIDs.
+//        val settings = ScanSettings.Builder().build()
+//        val filters = BLEAttributes.REQUIRED_SERVICES.map { serviceId ->
+//            ScanFilter.Builder().setServiceUuid(ParcelUuid(serviceId)).build()
+//        }.toMutableList()
+//        scanner.startScan(filters, settings, scanCallback)
+        scanner.startScan(scanCallback)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
@@ -113,7 +111,7 @@ class SlitherActivity : AppCompatActivity() {
         // Stop scanning and play the game once we have reached the required
         // player count.
         if (connectedAddresses.size == Game.PLAYER_COUNT) {
-            bluetoothAdapter.stopLeScan(scanCallback)
+            scanner.stopScan(scanCallback)
             game.state = GameState.PLAY
         }
 
@@ -127,7 +125,7 @@ class SlitherActivity : AppCompatActivity() {
             game.state = GameState.CONNECT
 
             // Begin scanning again.
-            bluetoothAdapter.startLeScan(scanCallback)
+            startScan()
 
             // Set the players avatar back to unconnected.
             runOnUiThread {
@@ -191,8 +189,7 @@ class SlitherActivity : AppCompatActivity() {
 
     companion object {
         // Android request codes.
-        private const val REQUEST_CODE_ENABLE_BLUETOOTH = 1
-        private const val REQUEST_CODE_PERMISSION = 2
+        private const val REQUEST_CODE_PERMISSION = 1
 
         // Low pass alpha value, smaller is more smooth.
         private const val AVATAR_ROTATION_SMOOTH_RATE = 0.1
