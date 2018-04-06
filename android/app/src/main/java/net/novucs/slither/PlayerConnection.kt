@@ -1,7 +1,6 @@
 package net.novucs.slither
 
 import android.bluetooth.*
-import android.util.Log
 import net.novucs.slither.BLEAttributes.SNAKE_MESSAGE_SERVICE
 import net.novucs.slither.BLEAttributes.SNAKE_TX_CHARACTERISTIC
 import java.util.*
