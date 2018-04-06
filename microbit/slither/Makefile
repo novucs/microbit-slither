@@ -13,7 +13,7 @@ SOURCE_FILES += \
     source/SlitherClient.cpp \
     source/SlitherClient.h
 
-OUTPUT_FILE = build/bbc-microbit-classic-gcc/source/microbit-display-combined.hex
+OUTPUT_FILE = build/bbc-microbit-classic-gcc/source/microbit-slither-combined.hex
 
 run: ${OUTPUT_FILE}
 	cp ${OUTPUT_FILE} ${MICROBIT_PATH}
