@@ -4,6 +4,7 @@ import android.widget.ImageView
 import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.min
 
 class Player(val avatar: ImageView) {
     val direction = AtomicReference(Vector2i())
@@ -13,12 +14,7 @@ class Player(val avatar: ImageView) {
     var growthTicks = 0
     var score = 0
 
-    fun decrementGrowthTicks() {
-        this.growthTicks--
-    }
-
-    fun reward() {
-        score += 1
-        growthTicks += 3
+    fun grow(bonus: Int, maxSize: Int) {
+        growthTicks += min(maxSize - (body.size + growthTicks), bonus)
     }
 }

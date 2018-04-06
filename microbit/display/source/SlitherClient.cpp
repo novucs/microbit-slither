@@ -1,4 +1,5 @@
 #include "SlitherClient.h"
+#include "MessageService.h"
 
 namespace slither {
 
@@ -7,26 +8,34 @@ namespace slither {
         microBit->init();
 
         // Create and initialize the bluetooth services.
-        moveService = new SnakeMoveService(*microBit->ble);
+        moveService = new MoveService(*microBit->ble);
         moveService->initialize();
+
+        auto messageService = new MessageService(*microBit->ble);
+        messageService->initialize();
+        messageService->listen(this, &SlitherClient::onMessage);
+
         new MicroBitAccelerometerService(*microBit->ble, microBit->accelerometer);
 
         // Register event listeners.
         microBit->messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, this, &SlitherClient::onConnected);
-        microBit->messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, this, &SlitherClient::onDisconnected);
-        microBit->messageBus.listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this, &SlitherClient::onAccelerometerChange);
-        microBit->messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_DOWN, this, &SlitherClient::onButtonBDown);
+        microBit->messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, this,
+                                    &SlitherClient::onDisconnected);
+        microBit->messageBus.listen(MICROBIT_ID_ACCELEROMETER, MICROBIT_ACCELEROMETER_EVT_DATA_UPDATE, this,
+                                    &SlitherClient::onAccelerometerChange);
+        microBit->messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_DOWN, this,
+                                    &SlitherClient::onButtonBDown);
         microBit->messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_UP, this, &SlitherClient::onButtonBUp);
+
+        microBit->display.scroll("SLITHER");
     }
 
     void SlitherClient::onConnected(MicroBitEvent) {
         microBit->display.scroll("C");
-        connected = true;
     }
 
     void SlitherClient::onDisconnected(MicroBitEvent) {
         microBit->display.scroll("D");
-        connected = false;
     }
 
     void SlitherClient::onButtonBDown(MicroBitEvent) {
@@ -69,5 +78,10 @@ namespace slither {
 
     SlitherClient::~SlitherClient() {
         delete moveService;
+    }
+
+    void SlitherClient::onMessage(ManagedString message) {
+        microBit->display.stopAnimation();
+        microBit->display.scroll(message);
     }
 }

@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.util.AttributeSet
 import android.view.View
+import android.widget.TextView
 import java.util.concurrent.atomic.AtomicReference
 
 class GameView : View {
@@ -26,26 +27,39 @@ class GameView : View {
         val snapshot = this.snapshot.get() ?: return
 
         when (snapshot.state) {
-            GameState.CONNECT -> drawGameConnect(canvas, snapshot as GameSnapshot.Connect)
-            GameState.PLAY -> drawGamePlay(canvas, snapshot as GameSnapshot.Play)
+            GameState.CONNECT -> drawMessage(canvas, (snapshot as GameSnapshot.Connect).message)
+            GameState.PLAY -> {
+                drawGamePlay(canvas, snapshot as GameSnapshot.Play)
+                updatePlayerScore(R.id.playerText1, R.string.player1, snapshot.score1)
+                updatePlayerScore(R.id.playerText2, R.string.player2, snapshot.score2)
+            }
             GameState.COMPLETE -> {
+                drawMessage(canvas, (snapshot as GameSnapshot.Complete).message)
+                updatePlayerScore(R.id.playerText1, R.string.player1, snapshot.score1)
+                updatePlayerScore(R.id.playerText2, R.string.player2, snapshot.score2)
             }
         }
     }
 
-    private fun drawGameConnect(canvas: Canvas, snapshot: GameSnapshot.Connect) {
+    private fun updatePlayerScore(viewId: Int, textId: Int, score: Int) {
+        val view = (parent as View).findViewById<TextView?>(viewId)
+        val text = resources.getString(textId, score)
+        view?.text = text
+    }
+
+    private fun drawMessage(canvas: Canvas, message: String) {
         paint.style = Paint.Style.FILL
         paint.color = BlockType.BACKGROUND.color
         canvas.drawPaint(paint)
 
         paint.color = Color.WHITE
         paint.strokeWidth = 16f
-        drawCenteredMessage(canvas, paint, snapshot.message)
+        drawCenteredMessage(canvas, paint, message)
 
         paint.color = Color.BLACK
         paint.style = Paint.Style.STROKE
         paint.strokeWidth = 1f
-        drawCenteredMessage(canvas, paint, snapshot.message)
+        drawCenteredMessage(canvas, paint, message)
     }
 
     private fun drawCenteredMessage(canvas: Canvas, paint: Paint, message: String) {

@@ -1,26 +1,28 @@
 package net.novucs.slither
 
 import android.bluetooth.*
+import android.util.Log
+import net.novucs.slither.BLEAttributes.SNAKE_MESSAGE_SERVICE
+import net.novucs.slither.BLEAttributes.SNAKE_TX_CHARACTERISTIC
 import java.util.*
 import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.atomic.AtomicBoolean
 
 class PlayerConnection(private val context: SlitherActivity,
                        private val device: BluetoothDevice) : BluetoothGattCallback() {
 
-    private val servicesFound = AtomicBoolean(false)
-    private val subscriptionRequests = LinkedBlockingQueue<SubscriptionRequest>()
-    private val bleSafeRequests = LinkedList<SubscriptionRequest>()
+    private val operations = LinkedBlockingQueue<() -> Unit>()
     private val subscriptions = mutableMapOf<Subscription, (data: ByteArray) -> Unit>()
     private var disconnectCallback: (() -> Unit)? = null
     private var gatt: BluetoothGatt? = null
     private var connected = false
+    private var busy = false
 
     fun connect() {
         if (connected) {
             throw IllegalStateException("Already connected")
         }
 
+        busy = true
         connected = true
         gatt = device.connectGatt(context, false, this)
     }
@@ -44,44 +46,32 @@ class PlayerConnection(private val context: SlitherActivity,
     }
 
     override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-        servicesFound.set(true)
-        createNextSubscription()
+        executeNextOperation()
     }
 
     override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
-        createNextSubscription()
+        executeNextOperation()
     }
 
-    private fun createNextSubscription() {
-        subscriptionRequests.drainTo(bleSafeRequests)
-        if (bleSafeRequests.isEmpty()) {
-            return
-        }
+    override fun onDescriptorRead(gatt: BluetoothGatt?, descriptor: BluetoothGattDescriptor?, status: Int) {
+        executeNextOperation()
+    }
 
-        val request = bleSafeRequests.pop()
-        if (request != null) {
-            subscribe(request.callback, request.serviceId, request.characteristicId)
-        }
+    private fun executeNextOperation() {
+        busy = false
+        operations.poll()?.invoke()
     }
 
     fun subscribe(callback: (data: ByteArray) -> Unit, serviceId: UUID, characteristicId: UUID) {
-        val gatt = this.gatt ?: return
-        if (!servicesFound.get()) {
-            subscriptionRequests.add(SubscriptionRequest(callback, serviceId, characteristicId))
-            return
+        synchronized(busy) {
+            if (busy) {
+                operations += { subscribe(callback, serviceId, characteristicId) }
+                return
+            }
+            busy = true
         }
 
-        val service = gatt.getService(serviceId)
-        if (service == null) {
-            gatt.disconnect()
-            return
-        }
-
-        val characteristic = service.getCharacteristic(characteristicId)
-        if (characteristic == null) {
-            gatt.disconnect()
-            return
-        }
+        val (gatt, characteristic) = findCharacteristic(serviceId, characteristicId) ?: return
 
         if (characteristic.descriptors.isEmpty()) {
             gatt.disconnect()
@@ -89,7 +79,7 @@ class PlayerConnection(private val context: SlitherActivity,
         }
 
         gatt.setCharacteristicNotification(characteristic, true)
-        val descriptor = characteristic.descriptors[0]
+        val descriptor = characteristic.descriptors.first()
         descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
         gatt.writeDescriptor(descriptor)
 
@@ -97,14 +87,41 @@ class PlayerConnection(private val context: SlitherActivity,
         subscriptions[subscription] = callback
     }
 
+    fun sendMessage(message: String) {
+        synchronized(busy) {
+            if (busy) {
+                operations += { sendMessage(message) }
+                return
+            }
+            busy = true
+        }
+
+        val (gatt, characteristic) = findCharacteristic(
+                serviceId = SNAKE_MESSAGE_SERVICE,
+                characteristicId = SNAKE_TX_CHARACTERISTIC)
+                ?: return
+
+        characteristic.value = message.toByteArray()
+        gatt.writeCharacteristic(characteristic)
+        busy = false
+    }
+
+    private fun findCharacteristic(serviceId: UUID, characteristicId: UUID):
+            Pair<BluetoothGatt, BluetoothGattCharacteristic>? {
+        // Attempt to find and return the characteristic.
+        val gatt = this.gatt
+        gatt?.getService(serviceId)?.getCharacteristic(characteristicId)?.let {
+            return Pair(gatt, it)
+        }
+
+        // Disconnect from device on failure, as we are incompatible.
+        gatt?.disconnect()
+        return null
+    }
+
+    private data class Subscription(private val serviceId: UUID, private val characteristicId: UUID)
+
     private fun subscriptionOf(characteristic: BluetoothGattCharacteristic): Subscription {
         return Subscription(characteristic.service.uuid, characteristic.uuid)
     }
-
-    private data class SubscriptionRequest(val callback: (data: ByteArray) -> Unit,
-                                           val serviceId: UUID,
-                                           val characteristicId: UUID)
-
-    private data class Subscription(private val serviceId: UUID,
-                                    private val characteristicId: UUID)
 }

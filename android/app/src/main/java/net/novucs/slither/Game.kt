@@ -1,6 +1,7 @@
 package net.novucs.slither
 
 import java.util.*
+import kotlin.math.max
 
 class Game(private val view: GameView,
            val player1: Player,
@@ -8,10 +9,12 @@ class Game(private val view: GameView,
 
     private val random = Random()
     private val rewards = LinkedList<Vector2i>()
+    private var winner: Player? = null
+    private var loser: Player? = null
     var state = GameState.CONNECT
 
     override fun run() {
-        startPlay()
+        reset()
 
         while (!Thread.interrupted()) {
             tick()
@@ -27,24 +30,35 @@ class Game(private val view: GameView,
         }
     }
 
-    private fun startPlay() {
-        player1.body.clear()
-        player2.body.clear()
+    private fun reset() {
         rewards.clear()
 
-        for (i in 0 until INITIAL_REWARD_COUNT) {
+        for (i in 0 until REWARD_COUNT) {
             rewards.add(nextValidSpawn())
         }
 
-        player1.body.add(nextValidSpawn())
-        player2.body.add(nextValidSpawn())
+        resetPlayer(player1)
+        resetPlayer(player2)
+    }
+
+    private fun resetPlayer(player: Player) {
+        player.body.clear()
+        player.body.add(nextValidSpawn())
+        player.score = 0
+        player.growthTicks = (MIN_SIZE - 1)
     }
 
     private fun snapshot(): GameSnapshot {
         return when (state) {
             GameState.CONNECT -> GameSnapshot.Connect("Waiting for players to connect...")
-            GameState.PLAY -> GameSnapshot.Play(ArrayList(rewards), LinkedList(player1.body), LinkedList(player2.body))
-            else -> GameSnapshot.Complete("Game is complete?")
+            GameState.PLAY -> GameSnapshot.Play(ArrayList(rewards),
+                    LinkedList(player1.body), LinkedList(player2.body),
+                    player1.score, player2.score)
+            GameState.COMPLETE -> GameSnapshot.Complete("""
+                |Game over! Winner: Player ${if (player1.score > player2.score) '1' else '2'}
+                |Player 1: ${player1.score} points
+                |Player 2: ${player2.score} points
+                """.trimMargin(), player1.score, player2.score)
         }
     }
 
@@ -63,8 +77,14 @@ class Game(private val view: GameView,
     }
 
     private fun tick() {
-        tickPlayer(player1, player2)
-        tickPlayer(player2, player1)
+        if (state == GameState.PLAY) {
+            tickPlayer(player1, player2)
+            tickPlayer(player2, player1)
+        } else if (state == GameState.COMPLETE) {
+            Thread.sleep(RESTART_MILLIS)
+            reset()
+            state = GameState.PLAY
+        }
     }
 
     private fun tickPlayer(player: Player, opponent: Player) {
@@ -100,7 +120,7 @@ class Game(private val view: GameView,
         player.body.addLast(head.copy())
 
         if (player.growthTicks > 0) {
-            player.decrementGrowthTicks()
+            player.growthTicks -= 1
         } else {
             player.body.removeFirst()
         }
@@ -109,27 +129,59 @@ class Game(private val view: GameView,
         val rewardIterator = rewards.iterator()
         while (rewardIterator.hasNext()) {
             val reward = rewardIterator.next()
-            if (head.collides(reward)) {
-                rewardIterator.remove()
-                player.reward()
-                rewards.add(nextValidSpawn())
-                break
-            }
+            if (!head.collides(reward)) continue
+
+            rewardIterator.remove()
+            player.score += SCORE_REWARD_FOOD
+            player.grow(GROWTH_REWARD_FOOD, MAX_SIZE)
+            rewards.add(nextValidSpawn())
+            checkWinner(player, opponent)
+            break
         }
 
         // Reset the player if they collide with their opponent.
         if (head.collides(opponent.body)) {
             player.body.clear()
-            player.score = 0
             player.body.add(nextValidSpawn())
+            player.grow(MIN_SIZE, MAX_SIZE)
+            player.score = max(player.score - SCORE_PENALTY_DEATH, MINIMUM_SCORE)
+            opponent.score += SCORE_REWARD_KILL
+            opponent.grow(GROWTH_REWARD_KILL, MAX_SIZE)
+            checkWinner(opponent, player)
         }
+    }
+
+    private fun checkWinner(player: Player, opponent: Player) {
+        if (player.score < WINNING_SCORE) return
+
+        state = GameState.COMPLETE
+        winner = player
+        loser = opponent
+        player.connection?.sendMessage("WINNER!")
+        opponent.connection?.sendMessage("LOSER!")
     }
 
     companion object {
         const val MAP_HEIGHT = 24
         const val MAP_WIDTH = 32
-        const val REQUIRED_PLAYER_COUNT = 2
-        const val INITIAL_REWARD_COUNT = 5
+
+        const val PLAYER_COUNT = 2
+        const val REWARD_COUNT = 5
+
         const val TICK_RATE = 250L
+
+        const val MAX_SIZE = 20
+        const val MIN_SIZE = 3
+
+        const val GROWTH_REWARD_FOOD = 1
+        const val GROWTH_REWARD_KILL = 5
+
+        const val WINNING_SCORE = 100
+        const val MINIMUM_SCORE = 0
+        const val SCORE_REWARD_FOOD = 5
+        const val SCORE_REWARD_KILL = 25
+        const val SCORE_PENALTY_DEATH = 10
+
+        const val RESTART_MILLIS = 5000L
     }
 }

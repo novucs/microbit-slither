@@ -8,11 +8,11 @@
 
 namespace slither {
 
-    extern const uint8_t SnakeMoveServiceUUID[];
-    extern const uint8_t SnakeMoveDirectionUUID[];
-    extern const uint8_t SnakeMoveSpeedUUID[];
+    extern const uint8_t MoveServiceUUID[];
+    extern const uint8_t MoveCharacteristicDirectionUUID[];
+    extern const uint8_t MoveCharacteristicSpeedUUID[];
 
-    class SnakeMoveService {
+    class MoveService {
     private:
 
         BLEDevice &ble;
@@ -23,7 +23,7 @@ namespace slither {
 
     public:
 
-        explicit SnakeMoveService(BLEDevice &ble);
+        explicit MoveService(BLEDevice &ble);
 
         void initialize();
 

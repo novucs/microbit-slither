@@ -91,7 +91,7 @@ class SlitherActivity : AppCompatActivity() {
         if (device.name == null ||
                 !device.name.contains("BBC micro:bit") ||
                 connectedAddresses.contains(device.address) ||
-                connectedAddresses.size == Game.REQUIRED_PLAYER_COUNT) {
+                connectedAddresses.size == Game.PLAYER_COUNT) {
             return
         }
 
@@ -112,13 +112,10 @@ class SlitherActivity : AppCompatActivity() {
 
         // Stop scanning and play the game once we have reached the required
         // player count.
-        if (connectedAddresses.size == Game.REQUIRED_PLAYER_COUNT) {
+        if (connectedAddresses.size == Game.PLAYER_COUNT) {
             bluetoothAdapter.stopLeScan(scanCallback)
             game.state = GameState.PLAY
         }
-
-        // Connect to the device.
-        connection.connect()
 
         // Register a disconnect callback.
         connection.onDisconnect {
@@ -140,6 +137,9 @@ class SlitherActivity : AppCompatActivity() {
                 avatar.rotationY = 0f
             }
         }
+
+        // Connect to the device.
+        connection.connect()
 
         // Subscribe to the accelerometer characteristic.
         // Updates the player avatar rotation to match with the micro:bit.

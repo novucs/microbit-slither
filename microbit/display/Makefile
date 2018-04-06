@@ -6,10 +6,12 @@ MICROBIT_PATH = /run/media/billy/MICROBIT
 
 SOURCE_FILES += \
     source/main.cpp \
+    source/MessageService.cpp \
+    source/MessageService.h \
+    source/MoveService.cpp \
+    source/MoveService.h \
     source/SlitherClient.cpp \
-    source/SlitherClient.h \
-    source/SnakeMoveService.cpp \
-    source/SnakeMoveService.h
+    source/SlitherClient.h
 
 OUTPUT_FILE = build/bbc-microbit-classic-gcc/source/microbit-display-combined.hex
 

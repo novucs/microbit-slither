@@ -3,7 +3,8 @@
 
 #include <MicroBitEvent.h>
 #include <MicroBit.h>
-#include "SnakeMoveService.h"
+#include <vector>
+#include "MoveService.h"
 
 #define MOVEMENT_THRESHOLD 450
 
@@ -12,10 +13,9 @@ namespace slither {
     class SlitherClient {
     private:
         MicroBit *microBit = new MicroBit();
-        SnakeMoveService *moveService = nullptr; // Initialized on run.
+        MoveService *moveService = nullptr; // Initialized on run.
         int16_t previousX = 1;
         int16_t previousY = 1;
-        bool connected = false;
         uint64_t nextAllowedMove = 0;
 
         void onAccelerometerChange(MicroBitEvent event);
@@ -33,6 +33,8 @@ namespace slither {
         void onButtonBDown(MicroBitEvent);
 
         void onButtonBUp(MicroBitEvent);
+
+        void onMessage(ManagedString message);
     };
 
 }

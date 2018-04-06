@@ -2,6 +2,8 @@
     <string name="app_name">Slither</string>
 
     <string name="title_activity_game">GameActivity</string>
+    <string name="player1">Player 1 : %d points</string>
+    <string name="player2">Player 2 : %d points</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>

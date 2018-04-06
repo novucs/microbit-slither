@@ -1,17 +1,17 @@
-#include "SnakeMoveService.h"
+#include "MoveService.h"
 
 namespace slither {
 
-    SnakeMoveService::SnakeMoveService(BLEDevice &ble) : ble(ble) {}
+    MoveService::MoveService(BLEDevice &ble) : ble(ble) {}
 
-    void SnakeMoveService::initialize() {
+    void MoveService::initialize() {
         // Create the speed and direction characteristics.
-        GattCharacteristic directionCharacteristic(SnakeMoveDirectionUUID,
+        GattCharacteristic directionCharacteristic(MoveCharacteristicDirectionUUID,
                                                    (uint8_t *) directionBuffer, 0,
                                                    sizeof(directionBuffer),
                                                    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ |
                                                    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
-        GattCharacteristic speedCharacteristic(SnakeMoveSpeedUUID,
+        GattCharacteristic speedCharacteristic(MoveCharacteristicSpeedUUID,
                                                (uint8_t *) speedBuffer, 0,
                                                sizeof(speedBuffer),
                                                GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ |
@@ -28,7 +28,7 @@ namespace slither {
 
         // Create and add this service to the micro:bit GATT table.
         GattCharacteristic *characteristics[] = {&directionCharacteristic, &speedCharacteristic};
-        GattService service(SnakeMoveServiceUUID, characteristics,
+        GattService service(MoveServiceUUID, characteristics,
                             sizeof(characteristics) / sizeof(GattCharacteristic *));
         ble.addService(service);
 
@@ -40,7 +40,7 @@ namespace slither {
         ble.gattServer().write(speedHandle, (uint8_t *) speedBuffer, sizeof(directionBuffer));
     }
 
-    void SnakeMoveService::sendDirection(uint8_t x, uint8_t y) {
+    void MoveService::sendDirection(uint8_t x, uint8_t y) {
         if (!ble.getGapState().connected) {
             return;
         }
@@ -51,7 +51,7 @@ namespace slither {
         ble.gattServer().notify(directionHandle, (uint8_t *) directionBuffer, sizeof(directionBuffer));
     }
 
-    void SnakeMoveService::sendSpeed(uint8_t speed) {
+    void MoveService::sendSpeed(uint8_t speed) {
         if (!ble.getGapState().connected) {
             return;
         }
@@ -60,15 +60,15 @@ namespace slither {
         ble.gattServer().notify(speedHandle, (uint8_t *) speedBuffer, sizeof(speedBuffer));
     }
 
-    const uint8_t SnakeMoveServiceUUID[] = {
+    const uint8_t MoveServiceUUID[] = {
             0xaa, 0xb7, 0x93, 0x43, 0x9a, 0x83, 0x48, 0x86, 0xa1, 0xd3, 0x32, 0xa8, 0x00, 0x25, 0x99, 0x37
     };
 
-    const uint8_t SnakeMoveDirectionUUID[] = {
+    const uint8_t MoveCharacteristicDirectionUUID[] = {
             0xe4, 0x99, 0x0f, 0x35, 0x28, 0xf4, 0x40, 0xd8, 0xbf, 0xa2, 0xf0, 0x51, 0x18, 0x72, 0x0a, 0x28
     };
 
-    const uint8_t SnakeMoveSpeedUUID[] = {
+    const uint8_t MoveCharacteristicSpeedUUID[] = {
             0xe4, 0x99, 0x0e, 0x35, 0x28, 0xf4, 0x40, 0xd8, 0xbf, 0xa2, 0xf0, 0x51, 0x18, 0x72, 0x0a, 0x28
     };
 
