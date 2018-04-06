@@ -1,7 +1,7 @@
 {
-  "name": "microbit-display",
+  "name": "microbit-slither",
   "version": "1.0.0",
-  "description": "Displays the micro:bit movements on a phone app via bluetooth",
+  "description": "Multiplayer snake game. Controlled via bluetooth on micro:bits, and hosted on an Android device.",
   "license": "MIT",
   "dependencies": {
     "microbit": "lancaster-university/microbit"
