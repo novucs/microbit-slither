@@ -6,12 +6,12 @@ namespace slither {
 
     void MoveService::initialize() {
         // Create the speed and direction characteristics.
-        GattCharacteristic directionCharacteristic(MoveCharacteristicDirectionUUID,
+        GattCharacteristic directionCharacteristic(MoveDirectionCharacteristicUUID,
                                                    (uint8_t *) directionBuffer, 0,
                                                    sizeof(directionBuffer),
                                                    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ |
                                                    GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY);
-        GattCharacteristic speedCharacteristic(MoveCharacteristicSpeedUUID,
+        GattCharacteristic speedCharacteristic(MoveSpeedCharacteristicUUID,
                                                (uint8_t *) speedBuffer, 0,
                                                sizeof(speedBuffer),
                                                GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ |
@@ -64,11 +64,11 @@ namespace slither {
             0xaa, 0xb7, 0x93, 0x43, 0x9a, 0x83, 0x48, 0x86, 0xa1, 0xd3, 0x32, 0xa8, 0x00, 0x25, 0x99, 0x37
     };
 
-    const uint8_t MoveCharacteristicDirectionUUID[] = {
+    const uint8_t MoveDirectionCharacteristicUUID[] = {
             0xe4, 0x99, 0x0f, 0x35, 0x28, 0xf4, 0x40, 0xd8, 0xbf, 0xa2, 0xf0, 0x51, 0x18, 0x72, 0x0a, 0x28
     };
 
-    const uint8_t MoveCharacteristicSpeedUUID[] = {
+    const uint8_t MoveSpeedCharacteristicUUID[] = {
             0xe4, 0x99, 0x0e, 0x35, 0x28, 0xf4, 0x40, 0xd8, 0xbf, 0xa2, 0xf0, 0x51, 0x18, 0x72, 0x0a, 0x28
     };
 
