@@ -3,6 +3,10 @@
 Multiplayer snake game. Controlled via bluetooth on micro:bits, and
 hosted on an Android device.
 
+The Android app is written in Kotlin, a functional programming language
+that is able to compile down to the JVM. The micro:bit firmware is written
+in C++ using micro:bit DAL.
+
 ## Building
 
 Clone the repository:
