@@ -6,6 +6,11 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.min
 
+/**
+ * Represents an in game snake player. Holding the players connection details
+ * and manages their growth rates. Direction and speeds are modified directly
+ * by the messages sent over bluetooth.
+ */
 class Player(val avatar: ImageView) {
     val direction = AtomicReference(Vector2i())
     val speed = AtomicInteger(1)

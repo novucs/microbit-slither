@@ -1,7 +1,11 @@
 package net.novucs.slither
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
@@ -12,14 +16,17 @@ import no.nordicsemi.android.support.v18.scanner.ScanCallback
 import no.nordicsemi.android.support.v18.scanner.ScanResult
 import java.util.concurrent.atomic.AtomicBoolean
 
-
+/**
+ * The main android activity for the slither game. Handles all bluetooth
+ * scanning and player connections. Creates and runs the game on initialisation.
+ */
 class SlitherActivity : AppCompatActivity() {
 
     private val connectedAddresses = mutableSetOf<String>()
 
     private val requestingPermissions = AtomicBoolean(false)
 
-    private val scanner = BluetoothLeScannerCompat.getScanner()
+    private val scanner: BluetoothLeScannerCompat = BluetoothLeScannerCompat.getScanner()
 
     private val game: Game by lazy {
         val player1 = Player(findViewById(R.id.playerImage1))
@@ -35,6 +42,10 @@ class SlitherActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Ensures location permissions for the app are granted, starts scanning
+     * and begins the game.
+     */
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_menu)
@@ -47,22 +58,51 @@ class SlitherActivity : AppCompatActivity() {
         gameThread.start()
     }
 
+    /**
+     * Starts scanning for micro:bit devices to connect to.
+     */
     private fun startScan() {
-        // BLE Scanning does not find all services UUIDs advertised, we're
-        // disconnecting from devices found invalid when connecting. It appears
-        // this is down to an unfixed Android bug for scanning 128bit UUIDs.
-//        val settings = ScanSettings.Builder().build()
-//        val filters = BLEAttributes.REQUIRED_SERVICES.map { serviceId ->
-//            ScanFilter.Builder().setServiceUuid(ParcelUuid(serviceId)).build()
-//        }.toMutableList()
-//        scanner.startScan(filters, settings, scanCallback)
-        scanner.startScan(scanCallback)
+        // Try to fetch the Bluetooth adapter.
+        val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val adapter: BluetoothAdapter? = bluetoothManager.adapter
+
+        // When either not found or not enabled, attempt to enable the
+        // Bluetooth service and try again.
+        if (adapter == null || !adapter.isEnabled) {
+            val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+            startActivityForResult(enableBtIntent, REQUEST_CODE_ENABLE_BLUETOOTH)
+        } else {
+            // BLE Scanning does not find all services UUIDs advertised, we're
+            // disconnecting from devices found invalid when connecting. It appears
+            // this is down to an unfixed Android bug for scanning 128bit UUIDs.
+//          val settings = ScanSettings.Builder().build()
+//          val filters = BLEAttributes.REQUIRED_SERVICES.map { serviceId ->
+//              ScanFilter.Builder().setServiceUuid(ParcelUuid(serviceId)).build()
+//          }.toMutableList()
+//          scanner.startScan(filters, settings, scanCallback)
+            scanner.startScan(scanCallback)
+        }
     }
 
+    /**
+     * Updates the app state to no longer requesting permissions when a result
+     * has been provided by the user.
+     */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         requestingPermissions.set(false)
     }
 
+    /**
+     * Attempts to start scanning once a result has been provided for enabling
+     * bluetooth on the device.
+     */
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        startScan()
+    }
+
+    /**
+     * Ensures all permissions have been granted by the user so the app my function properly.
+     */
     private fun ensurePermissionsGranted(vararg permissions: String) {
         for (permission in permissions) {
             while (!hasPermission(permission)) {
@@ -75,14 +115,28 @@ class SlitherActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Checks if a permission has been granted.
+     *
+     * @param permission the permission to check.
+     */
     private fun hasPermission(permission: String): Boolean {
         return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
     }
 
+    /**
+     * Requests to grant a list of permissions.
+     *
+     * @param permissions the permissions to request to be granted.
+     */
     private fun requestPermissions(vararg permissions: String) {
         ActivityCompat.requestPermissions(this, permissions, REQUEST_CODE_PERMISSION)
     }
 
+    /**
+     * Connects to the device if it is a micro:bit, not already connected and
+     * the game requires more players.
+     */
     private fun connect(device: BluetoothDevice) {
         // Do not connect to this device if its not a micro:bit, it's not
         // already connected, or if we've reached the player cap.
@@ -189,7 +243,8 @@ class SlitherActivity : AppCompatActivity() {
 
     companion object {
         // Android request codes.
-        private const val REQUEST_CODE_PERMISSION = 1
+        private const val REQUEST_CODE_ENABLE_BLUETOOTH = 1
+        private const val REQUEST_CODE_PERMISSION = 2
 
         // Low pass alpha value, smaller is more smooth.
         private const val AVATAR_ROTATION_SMOOTH_RATE = 0.1

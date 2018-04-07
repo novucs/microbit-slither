@@ -2,6 +2,9 @@ package net.novucs.slither
 
 import java.util.*
 
+/**
+ * All the attributes used by the slither game.
+ */
 object BLEAttributes {
     val ACCELEROMETER_SERVICE: UUID = UUID.fromString("e95d0753-251d-470a-a062-fa1922dfa9a8")
     val ACCELEROMETER_DATA_CHARACTERISTIC: UUID = UUID.fromString("e95dca4b-251d-470a-a062-fa1922dfa9a8")

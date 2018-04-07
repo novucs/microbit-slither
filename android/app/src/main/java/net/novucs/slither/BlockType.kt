@@ -2,6 +2,9 @@ package net.novucs.slither
 
 import android.graphics.Color
 
+/**
+ * Represents a type of block to be rendered on the game grid display.
+ */
 enum class BlockType(val color: Int) {
     BACKGROUND(Color.parseColor("#551A8B")),
     REWARD(Color.parseColor("#ffd700")),

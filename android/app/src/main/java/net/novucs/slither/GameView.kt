@@ -10,17 +10,26 @@ import android.view.View
 import android.widget.TextView
 import java.util.concurrent.atomic.AtomicReference
 
+/**
+ * Game view, renders the game progress to a view element in the current
+ * android layout.
+ */
 class GameView : View {
 
     private val paint = Paint()
     val snapshot = AtomicReference<GameSnapshot>()
 
+    /*
+     * Implement and forward all inherited constructors for this view.
+     */
+
     constructor(context: Context) : super(context)
-
     constructor(context: Context, attrs: AttributeSet?) : super(context, attrs)
-
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int) : super(context, attrs, defStyleAttr)
 
+    /**
+     * Draws to the canvas the game state.
+     */
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
 
@@ -41,12 +50,21 @@ class GameView : View {
         }
     }
 
+    /**
+     * Updates the given players score displayed on screen (above the players
+     * avatar).
+     */
     private fun updatePlayerScore(viewId: Int, textId: Int, score: Int) {
         val view = (parent as View).findViewById<TextView?>(viewId)
         val text = resources.getString(textId, score)
         view?.text = text
     }
 
+    /**
+     * Draws a message in the purple game box. New lines are supported, the
+     * first line considered a title with larger font and all subsequent lines
+     * use smaller fonts.
+     */
     private fun drawMessage(canvas: Canvas, message: String) {
         paint.style = Paint.Style.FILL
         paint.color = BlockType.BACKGROUND.color
@@ -62,6 +80,10 @@ class GameView : View {
         drawCenteredMessage(canvas, paint, message)
     }
 
+    /**
+     * Draws a centered message on the purple game screen. When written to
+     * twice, the text will overlap. Multi-lines are supported.
+     */
     private fun drawCenteredMessage(canvas: Canvas, paint: Paint, message: String) {
         val lines = message.split("\n")
         val rect = Rect()
@@ -84,6 +106,9 @@ class GameView : View {
         }
     }
 
+    /**
+     * Draws a game snapshot in the play state.
+     */
     private fun drawGamePlay(canvas: Canvas, snapshot: GameSnapshot.Play) {
         val blockWidth = width / Game.MAP_WIDTH
         val blockHeight = height / Game.MAP_HEIGHT
@@ -103,6 +128,9 @@ class GameView : View {
         canvas.drawRect(snapshot.player2.last.toBlock(blockWidth, blockHeight), paint)
     }
 
+    /**
+     * Draws a collection of blocks to the game screen.
+     */
     private fun drawBlocks(canvas: Canvas, type: BlockType, locations: Collection<Vector2i>,
                            blockWidth: Int, blockHeight: Int) {
         paint.color = type.color

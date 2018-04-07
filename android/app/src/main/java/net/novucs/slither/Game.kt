@@ -3,6 +3,9 @@ package net.novucs.slither
 import java.util.*
 import kotlin.math.max
 
+/**
+ * The game controller, contains all the logic for ticking players and rewards.
+ */
 class Game(private val view: GameView,
            val player1: Player,
            val player2: Player) : Runnable {
@@ -13,6 +16,9 @@ class Game(private val view: GameView,
     private var loser: Player? = null
     var state = GameState.CONNECT
 
+    /**
+     * Runs the game until the thread is interrupted.
+     */
     override fun run() {
         reset()
 
@@ -30,6 +36,9 @@ class Game(private val view: GameView,
         }
     }
 
+    /**
+     * Resets the game, updates all reward locations and resets all players.
+     */
     private fun reset() {
         rewards.clear()
 
@@ -41,6 +50,10 @@ class Game(private val view: GameView,
         resetPlayer(player2)
     }
 
+    /**
+     * Resets a player. Sets their size back to minimum and spawns them in a
+     * new location. Resets the players score back to zero.
+     */
     private fun resetPlayer(player: Player) {
         player.body.clear()
         player.body.add(nextValidSpawn())
@@ -48,6 +61,9 @@ class Game(private val view: GameView,
         player.growthTicks = (MIN_SIZE - 1)
     }
 
+    /**
+     * Gets an immutable snapshot of the game, used for rendering.
+     */
     private fun snapshot(): GameSnapshot {
         return when (state) {
             GameState.CONNECT -> GameSnapshot.Connect("Waiting for players to connect...")
@@ -62,6 +78,10 @@ class Game(private val view: GameView,
         }
     }
 
+    /**
+     * Gets the next valid spawn location that does not collide with any other
+     * entities currently existing on the map.
+     */
     private fun nextValidSpawn(): Vector2i {
         while (true) {
             val x = random.nextInt(MAP_WIDTH)
@@ -76,6 +96,10 @@ class Game(private val view: GameView,
         }
     }
 
+    /**
+     * Ticks the game. Handles all player movements when in play state, and
+     * resets the game state back to playing after a set duration on completion.
+     */
     private fun tick() {
         if (state == GameState.PLAY) {
             tickPlayer(player1, player2)
@@ -83,10 +107,17 @@ class Game(private val view: GameView,
         } else if (state == GameState.COMPLETE) {
             Thread.sleep(RESTART_MILLIS)
             reset()
-            state = GameState.PLAY
+
+            if (state == GameState.COMPLETE) {
+                state = GameState.PLAY
+            }
         }
     }
 
+    /**
+     * Ticks the player, validates their direction and moves the player
+     * depending on their speed.
+     */
     private fun tickPlayer(player: Player, opponent: Player) {
         // Player has not made a move from their starting position yet.
         val movement = player.direction.get()
@@ -99,6 +130,13 @@ class Game(private val view: GameView,
         }
     }
 
+    /**
+     * Handles all player movement logic. Collisions with map boundaries
+     * results in being teleported to the other side of the map. More
+     * segments are added on each movement when growing. Player is rewarded
+     * when killing or eating. Once a player has one, updates the game state
+     * to complete.
+     */
     private fun move(player: Player, opponent: Player, movement: Vector2i) {
         val head = player.body.last.add(movement)
 
@@ -151,6 +189,10 @@ class Game(private val view: GameView,
         }
     }
 
+    /**
+     * Checks if a player has won the game. Updates the game state and notifies
+     * each of the client devices of the completion.
+     */
     private fun checkWinner(player: Player, opponent: Player) {
         if (player.score < WINNING_SCORE) return
 
