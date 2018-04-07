@@ -78,15 +78,11 @@ devices. Before any micro:bits are found, the app should display both
 players as disconnected via greyed out snakes, with a message
 `Waiting for players to connect...`.
 
-![](img/begin.png)
+![](img/connect.png)
 
 Once one player has been found, their avatar should light up. All
 movements of the micro:bit device are rendered to their avatar.
-
-![](img/connect.png)
-
-When both players are connected, both avatars are lit up and movements
-are displayed with them. The game has now begun. The bottom purple
+The game starts once both players are connected. The bottom purple
 screen in the app is where the snake game is played. Two snakes should
 appear, with the same colour as their given avatar. Movements of the
 micro:bit device steer the direction in which the snake moves, and they
@@ -118,6 +114,12 @@ map.
 Once a player has reached the score of 100, the game is complete. The
 player to achieve the winning score is displayed on the screen. Also the
 the total number of points both players achieved will be displayed just
-below the winner.
+below the winner. Both micro:bit devices will be notified whether they
+have won or lost the match, then a message will scroll on their LED
+screens.
+
+After five seconds of displaying the game outcome, a new game will begin.
+Both players points, locations and sizes will be reset and the game will
+be ready to play from fresh.
 
 ![](img/complete.png)
