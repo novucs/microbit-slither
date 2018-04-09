@@ -127,3 +127,7 @@ Both players points, locations and sizes will be reset and the game will
 be ready to play from fresh.
 
 ![](img/complete.png)
+
+## State Diagram
+
+![](img/state-diagram.png)
